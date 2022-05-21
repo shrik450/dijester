@@ -5,13 +5,13 @@ from online feeds.
 
 ## Usage
 
-``` shell
+```shell
 dijester ./dijester.toml
 ```
 
 You can also
 
-``` shell
+```shell
 dijester --help
 ```
 
@@ -34,7 +34,7 @@ read at your leisure.
    digest.
 5. Interface with a service encapsulating Mozilla's Readbility to load
    articles from feeds which do not include the full content. In the
-   future, this capability *may* be bundled into the dijester binary,
+   future, this capability _may_ be bundled into the dijester binary,
    but until then you will need to use something like
    [phpdockerio/readability-js-server](https://hub.docker.com/r/phpdockerio/readability-js-server)
 
