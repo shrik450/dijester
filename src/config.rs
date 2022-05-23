@@ -2,14 +2,21 @@ use serde::{Deserialize, Serialize};
 use toml::from_str;
 
 #[derive(Deserialize, Serialize, Debug)]
+pub enum FeedType {
+    Atom,
+    RSS,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Feed {
-    name: String,
-    url: String,
+    pub name: String,
+    pub url: String,
+    pub feed_type: FeedType,
 }
 
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Config {
-    feeds: Vec<Feed>,
+    pub feeds: Vec<Feed>,
 }
 
 impl Config {
