@@ -39,7 +39,7 @@ impl TryFrom<String> for Config {
     fn try_from(value: String) -> Result<Self, Self::Error> {
         match toml::from_str::<Config>(&value) {
             Ok(conf) => Ok(conf),
-            Err(err) => Err(ConfigParseError::FileError(err.to_string())),
+            Err(err) => Err(ConfigParseError::ParseError(err.to_string())),
         }
     }
 }
@@ -50,7 +50,7 @@ impl TryFrom<std::path::PathBuf> for Config {
     fn try_from(value: std::path::PathBuf) -> Result<Self, Self::Error> {
         match std::fs::read_to_string(value) {
             Ok(content) => Self::try_from(content),
-            Err(err) => Err(ConfigParseError::ParseError(err.to_string())),
+            Err(err) => Err(ConfigParseError::FileError(err.to_string())),
         }
     }
 }

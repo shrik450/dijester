@@ -1,14 +1,15 @@
+use crate::entry::Entry;
 use atom_syndication::Feed as AtomFeed;
 use rss::Channel as RssFeed;
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FeedType {
     Atom,
     RSS,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Feed {
     pub name: String,
     pub url: String,
@@ -23,14 +24,17 @@ impl Feed {
             FeedType::Atom => {
                 let channel = AtomFeed::read_from(&resp[..])?;
                 let first_entry = channel.entries.first();
+                let entry = Entry::from(first_entry.unwrap().to_owned());
 
-                println!("{:#?}", first_entry)
+                println!("{:#?}", entry)
             }
+
             FeedType::RSS => {
                 let channel = RssFeed::read_from(&resp[..])?;
                 let first_entry = channel.items.first();
+                let entry = Entry::from(first_entry.unwrap().to_owned());
 
-                println!("{:#?}", first_entry)
+                println!("{:#?}", entry)
             }
         }
 
