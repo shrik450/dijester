@@ -7,8 +7,10 @@ authors = ["Shrikanth Upadhayaya <shrik450@gmail.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0"
 atom_syndication = "0.11"
 clap = { version = "3.1.18", features = ["derive"] }
+futures = "0.3"
 log = "0.4.17"
 env_logger = "0.9.0"
 reqwest = "0.11"
