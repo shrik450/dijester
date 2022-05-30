@@ -17,8 +17,8 @@ pub struct Feed {
 }
 
 impl Feed {
-    pub async fn load_entries(self) -> anyhow::Result<Vec<Entry>> {
-        let resp = reqwest::get(self.url).await?.bytes().await?;
+    pub async fn load_entries(&self) -> anyhow::Result<Vec<Entry>> {
+        let resp = reqwest::get(&self.url).await?.bytes().await?;
 
         let entries: Vec<Entry> = match self.feed_type {
             FeedType::Atom => {

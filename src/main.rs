@@ -1,12 +1,13 @@
 mod config;
 mod entry;
 mod export;
+mod extensions;
 mod feed;
 
 use clap::Parser;
 use config::Config;
 use env_logger::{Builder, Env, Target};
-use futures::future;
+use extensions::JoinableIterator;
 
 #[derive(Parser)]
 #[clap(author, version, about)]
@@ -40,16 +41,18 @@ async fn wrapped_main(config_file: std::path::PathBuf) -> anyhow::Result<()> {
     let conf = Config::try_from(config_file)?;
 
     log::debug!("Generating digest for config named: {}", conf.name);
-    let promises = conf.feeds.into_iter().map(|feed| feed.load_entries());
 
-    let entries: Vec<entry::Entry> = future::join_all(promises)
-        .await
+    conf.feeds
         .into_iter()
-        .filter(|res| res.is_ok())
-        .flat_map(|res| res.unwrap())
-        .collect();
-
-    println!("Loaded {} entries.", entries.len());
+        .map(|feed| export_feed(feed, &conf.export_options))
+        .join_all()
+        .await;
 
     Ok(())
+}
+
+async fn export_feed(feed: feed::Feed, export_options: &config::ExportConfig) {
+    let res = feed.load_entries().await;
+    let entries = res.unwrap_or_else(|_| Vec::new());
+    export::export(feed.name, entries, export_options).await;
 }
