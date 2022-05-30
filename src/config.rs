@@ -28,8 +28,37 @@ impl std::fmt::Display for ConfigParseError {
 
 impl std::error::Error for ConfigParseError {}
 
+/// Determines whether the output of the digest is one `Compiled` file, or
+/// several `Separate` files. The second option is useful if you would like to
+/// further process to the output of dijester.
+#[derive(Deserialize, Serialize, Debug)]
+pub enum ExportType {
+    Compiled,
+    Separate,
+}
+
+/// Determines the file format of the output.
+#[derive(Deserialize, Serialize, Debug)]
+pub enum ExportFormat {
+    HTML,
+    MD,
+    EPUB,
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct ExportConfig {
+    pub destination: std::path::PathBuf,
+    pub export_type: ExportType,
+    pub export_format: ExportFormat,
+}
+
 #[derive(Deserialize, Serialize, Debug)]
 pub struct Config {
+    /// The name of this feed. This is used to name the digest.
+    pub name: String,
+    /// How you'd like the digest to be stored.
+    pub export_options: ExportConfig,
+    /// An array of feeds you want to generate digests from.
     pub feeds: Vec<Feed>,
 }
 

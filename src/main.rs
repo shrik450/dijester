@@ -1,5 +1,6 @@
 mod config;
 mod entry;
+mod export;
 mod feed;
 
 use clap::Parser;
@@ -37,9 +38,18 @@ async fn main() {
 async fn wrapped_main(config_file: std::path::PathBuf) -> anyhow::Result<()> {
     log::debug!("Loading config file: {:#?}", config_file);
     let conf = Config::try_from(config_file)?;
+
+    log::debug!("Generating digest for config named: {}", conf.name);
     let promises = conf.feeds.into_iter().map(|feed| feed.load_entries());
 
-    future::join_all(promises).await;
+    let entries: Vec<entry::Entry> = future::join_all(promises)
+        .await
+        .into_iter()
+        .filter(|res| res.is_ok())
+        .flat_map(|res| res.unwrap())
+        .collect();
+
+    println!("Loaded {} entries.", entries.len());
 
     Ok(())
 }

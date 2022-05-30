@@ -17,27 +17,29 @@ pub struct Feed {
 }
 
 impl Feed {
-    pub async fn load_entries(self) -> anyhow::Result<()> {
+    pub async fn load_entries(self) -> anyhow::Result<Vec<Entry>> {
         let resp = reqwest::get(self.url).await?.bytes().await?;
 
-        match self.feed_type {
+        let entries: Vec<Entry> = match self.feed_type {
             FeedType::Atom => {
                 let channel = AtomFeed::read_from(&resp[..])?;
-                let first_entry = channel.entries.first();
-                let entry = Entry::from(first_entry.unwrap().to_owned());
-
-                println!("{:#?}", entry)
+                channel
+                    .entries
+                    .into_iter()
+                    .map(|feed_entry| Entry::from(feed_entry))
+                    .collect()
             }
 
             FeedType::RSS => {
                 let channel = RssFeed::read_from(&resp[..])?;
-                let first_entry = channel.items.first();
-                let entry = Entry::from(first_entry.unwrap().to_owned());
-
-                println!("{:#?}", entry)
+                channel
+                    .items
+                    .into_iter()
+                    .map(|feed_entry| Entry::from(feed_entry))
+                    .collect()
             }
-        }
+        };
 
-        Ok(())
+        Ok(entries)
     }
 }
