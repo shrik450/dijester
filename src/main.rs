@@ -42,17 +42,19 @@ async fn wrapped_main(config_file: std::path::PathBuf) -> anyhow::Result<()> {
 
     log::debug!("Generating digest for config named: {}", conf.name);
 
-    conf.feeds
+    let feed_entries_mapping = conf
+        .feeds
         .into_iter()
-        .map(|feed| export_feed(feed, &conf.export_options))
+        .map(|feed| fetch_feed_entries(feed))
         .join_all()
         .await;
 
-    Ok(())
+    export::export(feed_entries_mapping, conf.export_options).await
 }
 
-async fn export_feed(feed: feed::Feed, export_options: &config::ExportConfig) {
+async fn fetch_feed_entries(feed: feed::Feed) -> (feed::Feed, Vec<entry::Entry>) {
     let res = feed.load_entries().await;
     let entries = res.unwrap_or_else(|_| Vec::new());
-    export::export(feed.name, entries, export_options).await;
+
+    (feed, entries)
 }
