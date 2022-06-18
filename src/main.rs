@@ -1,13 +1,10 @@
 mod config;
-mod entry;
-mod export;
+mod core;
 mod extensions;
-mod feed;
 
 use clap::Parser;
-use config::Config;
 use env_logger::{Builder, Env, Target};
-use extensions::JoinableIterator;
+use log::info;
 
 #[derive(Parser)]
 #[clap(author, version, about)]
@@ -25,36 +22,7 @@ async fn main() {
 
     let args = Cli::parse();
 
-    match wrapped_main(args.config_file).await {
-        Ok(_) => (),
-        Err(err) => {
-            log::error!("Could not read config file.");
-            log::error!("{}", err.to_string());
-            log::error!("Exiting.");
-            std::process::exit(1)
-        }
-    }
-}
+    let conf: config::Config = args.config_file.try_into().unwrap();
 
-async fn wrapped_main(config_file: std::path::PathBuf) -> anyhow::Result<()> {
-    log::debug!("Loading config file: {:#?}", config_file);
-    let conf = Config::try_from(config_file)?;
-
-    log::debug!("Generating digest for config named: {}", conf.name);
-
-    let feed_entries_mapping = conf
-        .feeds
-        .into_iter()
-        .map(|feed| fetch_feed_entries(feed))
-        .join_all()
-        .await;
-
-    export::export(feed_entries_mapping, conf.export_options).await
-}
-
-async fn fetch_feed_entries(feed: feed::Feed) -> (feed::Feed, Vec<entry::Entry>) {
-    let res = feed.load_entries().await;
-    let entries = res.unwrap_or_else(|_| Vec::new());
-
-    (feed, entries)
+    info!("Successfully loaded config from file.")
 }
