@@ -1,12 +1,12 @@
 /// Describes a write that creates a file.
 pub(super) struct CreateFileAction {
-    relative_path: String,
-    content: Vec<u8>,
+    pub(crate) relative_path: String,
+    pub(crate) content: Vec<u8>,
 }
 
 /// Describes a write that creates a directory.
 pub(super) struct CreateDirectoryAction {
-    relative_path: String,
+    pub(crate) relative_path: String,
 }
 
 /// A WriteAction is a description of a write that must happen sometime.
