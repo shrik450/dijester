@@ -1,6 +1,8 @@
 mod config;
 mod core;
+mod export;
 mod extensions;
+mod fetch;
 
 use clap::Parser;
 use env_logger::{Builder, Env, Target};
@@ -15,7 +17,7 @@ struct Cli {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> anyhow::Result<()> {
     Builder::from_env(Env::default())
         .target(Target::Stdout)
         .init();
@@ -24,5 +26,12 @@ async fn main() {
 
     let conf: config::Config = args.config_file.try_into().unwrap();
 
-    info!("Successfully loaded config from file.")
+    info!("Successfully loaded config from file.");
+
+    let entries = fetch::fetch(&conf.feeds[0]).await?;
+    println!("{:#?}", entries);
+
+    export::export(vec![(conf.feeds[0].clone(), entries)], conf.export_options).await?;
+
+    Ok(())
 }
