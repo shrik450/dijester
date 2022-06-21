@@ -29,7 +29,9 @@ impl From<RssEntry> for Entry {
     fn from(value: RssEntry) -> Entry {
         Entry {
             id: value.guid.unwrap().value,
-            title: value.title.unwrap_or("?".to_string()),
+            title: value
+                .title
+                .unwrap_or_else(|| "Untitled Article".to_string()),
             author: value.author,
             link: value.link,
             content: value.content.unwrap_or_default(),

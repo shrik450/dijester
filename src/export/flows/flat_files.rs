@@ -17,12 +17,13 @@ impl ExportFlow for FlatFiles {
         entries: Vec<(Feed, Vec<Entry>)>,
         exporter: Box<dyn Exporter>,
     ) -> anyhow::Result<Vec<WriteAction>> {
-        let a = entries
+        let all_actions = entries
             .into_iter()
             .flat_map(|(feed, entries)| {
                 let mut actions: Vec<WriteAction> = vec![];
+                let relative_path = format!("{}/{}", name, feed.name);
                 actions.push(WriteAction::CreateDirectory(CreateDirectoryAction {
-                    relative_path: format!("{}/{}", name, feed.name.to_owned()),
+                    relative_path,
                 }));
 
                 entries
@@ -48,6 +49,6 @@ impl ExportFlow for FlatFiles {
             })
             .collect();
 
-        Ok(a)
+        Ok(all_actions)
     }
 }

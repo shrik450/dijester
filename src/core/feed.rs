@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Deserialize, Serialize, Debug, Clone)]
 pub enum FeedType {
     Atom,
-    RSS,
+    Rss,
 }
 
 #[derive(Deserialize, Serialize, Debug, Clone)]

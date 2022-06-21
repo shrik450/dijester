@@ -12,9 +12,9 @@ pub enum ExportType {
 /// Determines the file format of the output.
 #[derive(Deserialize, Serialize, Debug)]
 pub enum ExportFormat {
-    TXT,
-    MD,
-    EPUB,
+    Txt,
+    Md,
+    Epub,
 }
 
 #[derive(Deserialize, Serialize, Debug)]

@@ -45,15 +45,15 @@ pub struct Config {
     pub feeds: Vec<Feed>,
 }
 
-impl Into<Config> for SerializableConfig {
-    fn into(self) -> Config {
+impl From<SerializableConfig> for Config {
+    fn from(serializable_config: SerializableConfig) -> Self {
         Config {
-            name: self.name,
-            track_read: self.track_read.unwrap_or(false),
-            max_new_entries: self.max_new_entries.unwrap_or(25),
-            export_options: self.export_options,
-            readability_config: self.readability_config.unwrap_or_default(),
-            feeds: self.feeds,
+            name: serializable_config.name,
+            track_read: serializable_config.track_read.unwrap_or(false),
+            max_new_entries: serializable_config.max_new_entries.unwrap_or(25),
+            export_options: serializable_config.export_options,
+            readability_config: serializable_config.readability_config.unwrap_or_default(),
+            feeds: serializable_config.feeds,
         }
     }
 }

@@ -23,8 +23,8 @@ pub(super) trait Exporter: Debug {
 
 pub(super) fn get_exporter_for_format(format: ExportFormat) -> Box<dyn Exporter> {
     match format {
-        ExportFormat::TXT => Box::new(text::TextExporter()),
-        ExportFormat::MD => Box::new(markdown::MarkdownExporter()),
-        ExportFormat::EPUB => Box::new(epub::EpubExporter()),
+        ExportFormat::Txt => Box::new(text::TextExporter()),
+        ExportFormat::Md => Box::new(markdown::MarkdownExporter()),
+        ExportFormat::Epub => Box::new(epub::EpubExporter()),
     }
 }

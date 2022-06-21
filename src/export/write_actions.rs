@@ -30,7 +30,7 @@ pub(super) enum WriteAction {
 
 impl WriteAction {
     /// Asynchronously performs the write described by this action.
-    pub(super) async fn write(self, base_path: &std::path::PathBuf) -> std::io::Result<()> {
+    pub(super) async fn write(self, base_path: &std::path::Path) -> std::io::Result<()> {
         match self {
             WriteAction::CreateFile(file) => {
                 let final_path = base_path.join(file.relative_path);

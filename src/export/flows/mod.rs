@@ -10,8 +10,8 @@ use super::{exporters::Exporter, write_actions::WriteAction};
 mod compiled;
 mod flat_files;
 
-/// An **ExportFlow** runs all actions that need to be performed to generate a digest
-/// for a particular **[ExportType]**
+/// An **ExportFlow** runs all actions that need to be performed to generate a
+/// digest for a particular **[ExportType]**
 ///
 /// To understand why this is necessary, consider that a flat files export could
 /// require making a lot of new directories, while a compiled export will only

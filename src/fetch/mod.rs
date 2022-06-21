@@ -2,30 +2,35 @@ use crate::core::{
     entry::Entry,
     feed::{
         Feed,
-        FeedType::{Atom, RSS},
+        FeedType::{Atom, Rss},
     },
 };
 use anyhow::Result;
 use atom_syndication::Feed as AtomFeed;
+use log::trace;
 use rss::Channel as RssFeed;
 
 pub async fn fetch(feed: &Feed) -> Result<Vec<Entry>> {
+    trace!("Fetching entries for feed: {}", feed.name);
+
     let owned_feed = feed.to_owned();
     let data = reqwest::get(owned_feed.url).await?.bytes().await?;
 
-    let entries = match owned_feed.feed_type {
+    let entries: Vec<Entry> = match owned_feed.feed_type {
         Atom => AtomFeed::read_from(&data[..])?
             .entries
             .into_iter()
-            .map(|e| Entry::from(e))
+            .map(Entry::from)
             .collect(),
-        RSS => RssFeed::read_from(&data[..])?
+        Rss => RssFeed::read_from(&data[..])?
             .items()
-            .to_owned()
-            .into_iter()
-            .map(|e| Entry::from(e))
+            .iter()
+            .cloned()
+            .map(Entry::from)
             .collect(),
     };
+
+    trace!("Fetched {} entries.", entries.len());
 
     Ok(entries)
 }

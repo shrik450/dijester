@@ -1,4 +1,4 @@
-use log::{debug, info};
+use log::{debug, info, trace};
 
 use crate::{
     config::export_config::ExportConfig,
@@ -24,6 +24,8 @@ pub async fn export(
     info!("Exporting to: {}", export_name);
 
     let actions = flow.export(export_name, entries, exporter)?;
+
+    trace!("Generated list of actions to be performed, proceeding to write.");
 
     // We can't just join them all and await the joined promise - we're
     // promising ordered execution of writes right now.

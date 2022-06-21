@@ -12,7 +12,7 @@ impl TextExporter {
     }
 
     fn generate_content_for_entry(entry: Entry) -> String {
-        let mut content = format!("{}\n\n", entry.title.clone());
+        let mut content = format!("{}\n\n", entry.title);
 
         if entry.author.is_some() {
             content.push_str(&format!("By: {}\n\n", entry.author.unwrap()));
@@ -41,9 +41,9 @@ impl Exporter for TextExporter {
 
             for entry in feed_entries {
                 content.push_str(&TextExporter::generate_content_for_entry(entry));
-                content.push_str("\n");
+                content.push('\n');
                 content.push_str(&"-".repeat(80));
-                content.push_str("\n");
+                content.push('\n');
             }
         }
 
