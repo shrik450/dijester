@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     config::export_config::ExportType,
     core::{entry::Entry, feed::Feed},
@@ -15,7 +17,7 @@ mod flat_files;
 /// require making a lot of new directories, while a compiled export will only
 /// require one file. This isn't entirely captured by the [Exporter], as that
 /// trait only deals with converting entries into files of a particular format.
-pub(super) trait ExportFlow {
+pub(super) trait ExportFlow: fmt::Debug {
     /// Determine all writes that need to be performed to export the `entries`.
     ///
     /// Returns:
@@ -26,6 +28,7 @@ pub(super) trait ExportFlow {
     /// would allow for async writing.
     fn export(
         &self,
+        name: String,
         entries: Vec<(Feed, Vec<Entry>)>,
         exporter: Box<dyn Exporter>,
     ) -> anyhow::Result<Vec<WriteAction>>;

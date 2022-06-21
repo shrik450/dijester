@@ -28,9 +28,13 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Successfully loaded config from file.");
 
-    let entries = fetch::fetch(&conf.feeds[0]).await?;
+    let entries = fetch::fetch_all(conf.feeds).await?;
 
-    export::export(vec![(conf.feeds[0].clone(), entries)], conf.export_options).await?;
+    info!("Fetched entries to export.");
+
+    export::export(conf.name, entries, conf.export_options).await?;
+
+    info!("Exported entries, exiting.");
 
     Ok(())
 }

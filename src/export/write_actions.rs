@@ -1,3 +1,5 @@
+use log::trace;
+
 /// Describes a write that creates a file.
 pub(super) struct CreateFileAction {
     pub(crate) relative_path: String,
@@ -32,10 +34,12 @@ impl WriteAction {
         match self {
             WriteAction::CreateFile(file) => {
                 let final_path = base_path.join(file.relative_path);
+                trace!("Writing file to {:#?}", final_path);
                 tokio::fs::write(final_path, file.content).await
             }
             WriteAction::CreateDirectory(directory) => {
                 let final_path = base_path.join(directory.relative_path);
+                trace!("Creating directory at {:#?}", final_path);
                 tokio::fs::create_dir_all(final_path).await
             }
         }

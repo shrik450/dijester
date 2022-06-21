@@ -7,11 +7,13 @@ use crate::{
     },
 };
 
+#[derive(Debug)]
 pub(super) struct FlatFiles();
 
 impl ExportFlow for FlatFiles {
     fn export(
         &self,
+        name: String,
         entries: Vec<(Feed, Vec<Entry>)>,
         exporter: Box<dyn Exporter>,
     ) -> anyhow::Result<Vec<WriteAction>> {
@@ -20,12 +22,19 @@ impl ExportFlow for FlatFiles {
             .flat_map(|(feed, entries)| {
                 let mut actions: Vec<WriteAction> = vec![];
                 actions.push(WriteAction::CreateDirectory(CreateDirectoryAction {
-                    relative_path: feed.name.to_owned(),
+                    relative_path: format!("{}/{}", name, feed.name.to_owned()),
                 }));
+
                 entries
                     .into_iter()
                     .map(|entry| {
-                        let relative_path = format!("{}/{}", feed.name, entry.title);
+                        let relative_path = format!(
+                            "{}/{}/{}.{}",
+                            name,
+                            feed.name,
+                            entry.title,
+                            exporter.file_extension()
+                        );
                         let content = exporter.build_single_file(entry);
 
                         CreateFileAction {

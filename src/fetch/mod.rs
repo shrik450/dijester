@@ -29,3 +29,14 @@ pub async fn fetch(feed: &Feed) -> Result<Vec<Entry>> {
 
     Ok(entries)
 }
+
+pub async fn fetch_all(feeds: Vec<Feed>) -> Result<Vec<(Feed, Vec<Entry>)>> {
+    let mut entries: Vec<(Feed, Vec<Entry>)> = vec![];
+
+    for feed in feeds {
+        let feed_entries = fetch(&feed).await?;
+        entries.push((feed, feed_entries));
+    }
+
+    Ok(entries)
+}
