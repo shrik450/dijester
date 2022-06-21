@@ -18,7 +18,7 @@ pub async fn export(
     let flow = flows::get_flow_for_type(export_config.export_type);
     let current_time = chrono::Local::now().to_rfc2822();
 
-    let export_name = format!("{}_{}", name, current_time);
+    let export_name = format!("{} - {}", name, current_time);
 
     debug!("Loaded exporter {:#?} for flow {:#?}", exporter, flow);
     info!("Exporting to: {}", export_name);
