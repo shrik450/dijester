@@ -34,10 +34,10 @@ async fn main() -> anyhow::Result<()> {
     let entries = fetch::fetch(conf.feeds, filter_config).await?;
     log::info!("Fetched entries to export.");
 
-    if entries.len() > 0 {
-        export::export(conf.name, entries, conf.export_options).await?;
-    } else {
+    if entries.is_empty() {
         log::info!("No entries to export; won't create a digest for this run.");
+    } else {
+        export::export(conf.name, entries, conf.export_options).await?;
     }
     log::info!("Exported entries, exiting.");
 

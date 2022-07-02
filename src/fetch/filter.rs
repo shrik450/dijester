@@ -88,6 +88,6 @@ pub(super) async fn filter_for_export(
 
             (feed, final_entries)
         })
-        .filter(|(_, entries)| entries.len() > 0)
+        .filter(|(_, entries)| !entries.is_empty())
         .collect()
 }
