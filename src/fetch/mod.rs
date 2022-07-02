@@ -7,11 +7,18 @@ use crate::core::{
 };
 use anyhow::Result;
 use atom_syndication::Feed as AtomFeed;
-use log::trace;
 use rss::Channel as RssFeed;
 
-pub async fn fetch(feed: &Feed) -> Result<Vec<Entry>> {
-    trace!("Fetching entries for feed: {}", feed.name);
+mod filter;
+
+pub struct FilterConfig {
+    pub namespace: String,
+    pub global_track_read: bool,
+    pub global_max_entries: u8,
+}
+
+async fn fetch_entries_for_feed(feed: &Feed) -> Result<Vec<Entry>> {
+    log::debug!("Fetching entries for feed: {}", feed.name);
 
     let owned_feed = feed.to_owned();
     let data = reqwest::get(owned_feed.url).await?.bytes().await?;
@@ -30,18 +37,23 @@ pub async fn fetch(feed: &Feed) -> Result<Vec<Entry>> {
             .collect(),
     };
 
-    trace!("Fetched {} entries.", entries.len());
+    log::debug!("Fetched {} entries.", entries.len());
 
     Ok(entries)
 }
 
-pub async fn fetch_all(feeds: Vec<Feed>) -> Result<Vec<(Feed, Vec<Entry>)>> {
+pub async fn fetch(
+    feeds: Vec<Feed>,
+    filter_config: FilterConfig,
+) -> Result<Vec<(Feed, Vec<Entry>)>> {
     let mut entries: Vec<(Feed, Vec<Entry>)> = vec![];
 
     for feed in feeds {
-        let feed_entries = fetch(&feed).await?;
+        let feed_entries = fetch_entries_for_feed(&feed).await?;
         entries.push((feed, feed_entries));
     }
 
-    Ok(entries)
+    let filtered_entries = filter::filter_for_export(entries, filter_config).await;
+
+    Ok(filtered_entries)
 }

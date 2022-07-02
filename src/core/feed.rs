@@ -13,5 +13,5 @@ pub struct Feed {
     pub feed_type: FeedType,
     pub use_readability: Option<bool>,
     pub track_read: Option<bool>,
-    pub max_new_articles: Option<i8>,
+    pub max_new_articles: Option<u8>,
 }

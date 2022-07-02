@@ -26,7 +26,7 @@ struct SerializableConfig {
     pub track_read: Option<bool>,
     /// Global setting for at most how many new entries of a feed should be
     /// included in the digest. Defaults to 25.
-    pub max_new_entries: Option<i8>,
+    pub max_new_entries: Option<u8>,
     /// See [ExportConfig].
     pub export_options: ExportConfig,
     /// See [ReadabilityConfig]. Not required if you aren't using readability.
@@ -39,7 +39,7 @@ struct SerializableConfig {
 pub struct Config {
     pub name: String,
     pub track_read: bool,
-    pub max_new_entries: i8,
+    pub max_new_entries: u8,
     pub export_options: ExportConfig,
     pub readability_config: ReadabilityConfig,
     pub feeds: Vec<Feed>,
