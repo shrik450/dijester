@@ -6,7 +6,7 @@ mod fetch;
 
 use clap::Parser;
 use env_logger::{Builder, Env, Target};
-use log::info;
+use fetch::FilterConfig;
 
 #[derive(Parser)]
 #[clap(author, version, about)]
@@ -23,18 +23,23 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let args = Cli::parse();
-
     let conf: config::Config = args.config_file.try_into().unwrap();
+    log::info!("Successfully loaded config from file.");
 
-    info!("Successfully loaded config from file.");
+    let filter_config = FilterConfig {
+        namespace: conf.name.clone(),
+        global_track_read: conf.track_read,
+        global_max_entries: conf.max_new_entries,
+    };
+    let entries = fetch::fetch(conf.feeds, filter_config).await?;
+    log::info!("Fetched entries to export.");
 
-    let entries = fetch::fetch_all(conf.feeds).await?;
-
-    info!("Fetched entries to export.");
-
-    export::export(conf.name, entries, conf.export_options).await?;
-
-    info!("Exported entries, exiting.");
+    if entries.len() > 0 {
+        export::export(conf.name, entries, conf.export_options).await?;
+    } else {
+        log::info!("No entries to export; won't create a digest for this run.");
+    }
+    log::info!("Exported entries, exiting.");
 
     Ok(())
 }

@@ -1,4 +1,5 @@
 use atom_syndication::Entry as AtomEntry;
+use chrono::{DateTime, Utc};
 use rss::Item as RssEntry;
 
 #[derive(Debug)]
@@ -8,6 +9,7 @@ pub struct Entry {
     pub author: Option<String>,
     pub link: Option<String>,
     pub content: String,
+    pub published_at: DateTime<Utc>,
 }
 
 impl From<AtomEntry> for Entry {
@@ -21,6 +23,7 @@ impl From<AtomEntry> for Entry {
                 .content
                 .and_then(|content| content.value)
                 .unwrap_or_default(),
+            published_at: value.published.unwrap().to_owned().with_timezone(&Utc),
         }
     }
 }
@@ -35,6 +38,9 @@ impl From<RssEntry> for Entry {
             author: value.author,
             link: value.link,
             content: value.content.unwrap_or_default(),
+            published_at: DateTime::parse_from_rfc2822(value.pub_date.as_ref().unwrap())
+                .unwrap()
+                .with_timezone(&Utc),
         }
     }
 }

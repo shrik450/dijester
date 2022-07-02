@@ -9,7 +9,7 @@ authors = ["Shrikanth Upadhayaya <shrik450@gmail.com>"]
 [dependencies]
 anyhow = "1.0"
 atom_syndication = "0.11"
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "3.1.18", features = ["derive"] }
 futures = "0.3"
 html2text = "0.4.2"
