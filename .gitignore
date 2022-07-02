@@ -16,3 +16,4 @@ Cargo.lock
 # Ignored files
 
 ignored/
+*.dijester-history
