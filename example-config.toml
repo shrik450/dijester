@@ -1,0 +1,30 @@
+# Example Dijester Configuration
+
+[digest]
+title = "My Daily News Digest"
+format = "markdown"
+output_path = "./my_digest.md"
+
+[global]
+concurrent_fetches = 3
+user_agent = "Dijester/1.0"
+timeout = "30s"
+
+[sources.hackernews]
+type = "hackernews"
+enabled = true
+max_articles = 5
+
+[sources.hackernews.options]
+min_score = 100
+categories = ["front_page"]
+
+[sources.ycombinator]
+type = "rss"
+name = "Y Combinator RSS"
+enabled = true
+max_articles = 5
+
+[sources.ycombinator.options]
+url = "https://news.ycombinator.com/rss"
+include_summary = true
