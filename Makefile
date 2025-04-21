@@ -1,4 +1,4 @@
-.PHONY: all build test clean run fmt lint e2e-test tools check
+.PHONY: all build test clean run fmt lint e2e-test tools check ci-check fmt-check
 
 all: fmt lint test build
 
@@ -30,11 +30,17 @@ fmt: tools
 	@echo "Formatting code..."
 	$(shell go env GOPATH)/bin/gofumpt -l -w .
 
+fmt-check: tools
+	@echo "Checking formatting..."
+	@test -z "$(shell $(shell go env GOPATH)/bin/gofumpt -l .)" || (echo "Code is not formatted, run 'make fmt'" && exit 1)
+
 lint: tools
 	@echo "Linting code..."
 	$(shell go env GOPATH)/bin/golangci-lint run
 
 check: fmt lint test
+
+ci-check: fmt-check lint test
 
 clean:
 	rm -rf bin/
