@@ -139,4 +139,3 @@ func TestMarkdownFormatter_Format_NoSummary(t *testing.T) {
 		t.Errorf("Output should not contain '%s' when summaries are disabled", notExpectedLine)
 	}
 }
-

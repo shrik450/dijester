@@ -31,7 +31,7 @@ func (f *MarkdownFormatter) Format(w io.Writer, digest *models.Digest, opts *Opt
 	// Use default options if none provided
 	if opts == nil {
 		opts = &Options{
-			IncludeSummary: true,
+			IncludeSummary:  true,
 			IncludeMetadata: false,
 		}
 	}
@@ -91,4 +91,3 @@ func (f *MarkdownFormatter) Format(w io.Writer, digest *models.Digest, opts *Opt
 
 	return nil
 }
-
