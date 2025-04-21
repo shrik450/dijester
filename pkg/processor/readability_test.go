@@ -166,19 +166,27 @@ func TestReadabilityProcessor_Process_ExtractsMetadata(t *testing.T) {
 	}
 
 	// Check if title was extracted - readability typically uses the page title
-	if article.Title != "Page Title" {
-		t.Logf("Title extracted: %s (expected: Page Title)", article.Title)
+	expectedTitle := "Page Title"
+	if article.Title == "" {
+		t.Error("Failed to extract any title from the article")
+	} else if article.Title != expectedTitle {
+		t.Errorf("Expected title '%s', got: '%s'", expectedTitle, article.Title)
 	}
 
-	// Byline extraction is available in readability but may be inconsistent
-	// depending on the HTML structure
-	if article.Author != "" {
-		t.Logf("Author extracted: %s", article.Author)
+	// Check that the author was extracted
+	expectedAuthor := "Test Author"
+	if article.Author == "" {
+		t.Error("Failed to extract author information from the article")
+	} else if article.Author != expectedAuthor {
+		t.Errorf("Expected author '%s', got: '%s'", expectedAuthor, article.Author)
 	}
 
-	// Check excerpt extraction (might be blank depending on the content)
-	if article.Summary != "" {
-		t.Logf("Summary extracted: %s", article.Summary)
+	// Check that the summary was extracted
+	expectedSummary := "Test Description"
+	if article.Summary == "" {
+		t.Error("Failed to extract summary information from the article")
+	} else if article.Summary != expectedSummary {
+		t.Errorf("Expected summary '%s', got: '%s'", expectedSummary, article.Summary)
 	}
 }
 

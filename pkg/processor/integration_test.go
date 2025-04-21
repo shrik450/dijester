@@ -20,15 +20,20 @@ func TestReadabilityProcessor_RealWorldHTML(t *testing.T) {
 		t.Fatalf("Failed to process article: %v", err)
 	}
 
-	// Check if the title was extracted (readability typically uses the page title from HTML head)
+	// Check if the title was extracted
 	expectedTitle := "Test Article Page"
-	if article.Title != expectedTitle {
-		t.Logf("Title extracted: %s (expected: %s)", article.Title, expectedTitle)
+	if article.Title == "" {
+		t.Error("Failed to extract any title from the article")
+	} else if article.Title != expectedTitle {
+		t.Errorf("Expected title '%s', got: '%s'", expectedTitle, article.Title)
 	}
 
-	// Check that the author was extracted (if available)
-	if article.Author != "" {
-		t.Logf("Author extracted: %s", article.Author)
+	// Check that the author was extracted
+	expectedAuthor := "John Doe"
+	if article.Author == "" {
+		t.Error("Failed to extract author information from the article")
+	} else if article.Author != expectedAuthor {
+		t.Errorf("Expected author '%s', got: '%s'", expectedAuthor, article.Author)
 	}
 
 	// Check that the main content was extracted
