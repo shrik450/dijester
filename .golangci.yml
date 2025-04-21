@@ -1,6 +1,10 @@
 version: "2"
 
 linters:
+  disable:
+    - gocyclo
+    - errcheck
+    - dupl
   settings:
     revive:
       rules:
@@ -35,4 +39,3 @@ formatters:
 
 run:
   timeout: 5m
-

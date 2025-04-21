@@ -1,30 +1,30 @@
 # Example Dijester Configuration
 
 [digest]
-title = "My Daily News Digest"
 format = "epub"
 output_path = "./my_digest.epub"
+title = "My Daily News Digest"
 
 [global]
 concurrent_fetches = 3
-user_agent = "Dijester/1.0"
 timeout = "30s"
+user_agent = "Dijester/1.0"
 
 [sources.hackernews]
-type = "hackernews"
 enabled = true
 max_articles = 10
+type = "hackernews"
 
 [sources.hackernews.options]
-min_score = 100
 categories = ["front_page"]
+min_score = 100
 
 [sources.nytimes]
-type = "rss"
-name = "New York Times"
 enabled = true
 max_articles = 5
+name = "New York Times"
+type = "rss"
 
 [sources.nytimes.options]
-url = "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"
 include_summary = true
+url = "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"

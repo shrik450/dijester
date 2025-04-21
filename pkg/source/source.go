@@ -11,9 +11,6 @@ type Source interface {
 	// Name returns a unique identifier for this source
 	Name() string
 
-	// Description returns a human-readable description of this source
-	Description() string
-
 	// Fetch retrieves articles from the source
 	Fetch(ctx context.Context) ([]*models.Article, error)
 
