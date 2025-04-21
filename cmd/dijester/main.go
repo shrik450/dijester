@@ -78,23 +78,23 @@ func main() {
 	// Create content processor
 	proc := processor.NewReadabilityProcessor()
 	procOpts := processor.DefaultOptions()
-	
+
 	// Create formatter registry and register formatters
 	formatterRegistry := formatter.NewRegistry()
 	formatter.RegisterDefaultFormatters(formatterRegistry)
-	
+
 	// Determine output format (command line overrides config)
 	format := cfg.Digest.Format
 	if *outputFormat != "" {
 		format = formatter.Format(*outputFormat)
 	}
-	
+
 	// Get the formatter
 	fmt, ok := formatterRegistry.Get(format)
 	if !ok {
 		log.Fatalf("Unsupported output format: %s", format)
 	}
-	
+
 	// Prepare formatter options from config
 	fmtOpts := &cfg.Formatting
 	if !fmtOpts.IncludeSummary {
@@ -126,21 +126,21 @@ func main() {
 				log.Printf("Error processing article %s: %v", article.Title, err)
 				continue
 			}
-			
+
 			// Add the processed article to the digest
 			digest.Articles = append(digest.Articles, article)
 		}
 	}
-	
+
 	// Determine output path (command line overrides config)
 	finalOutputPath := cfg.Digest.OutputPath
 	if *outputPath != "" {
 		finalOutputPath = *outputPath
 	}
-	
+
 	// Ensure the output directory exists
 	outputDir := filepath.Dir(finalOutputPath)
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0o755); err != nil {
 		log.Fatalf("Error creating output directory: %v", err)
 	}
 

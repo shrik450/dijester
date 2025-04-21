@@ -46,9 +46,9 @@
 
 - [x] Design CLI flags and options
 - [x] Implement configuration file loading
-- [ ] Add output path handling
+- [x] Add output path handling
+- [x] Implement formatter selection
 - [ ] Create progress reporting
-- [ ] Implement formatter selection
 
 ## Step 7: Error Handling & Logging
 
