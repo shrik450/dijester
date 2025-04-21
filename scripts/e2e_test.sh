@@ -37,17 +37,37 @@ else
     exit 1
 fi
 
-# Run with example config
+# Create a test directory for output
+TEST_DIR="/tmp/dijester_test_output"
+rm -rf $TEST_DIR
+mkdir -p $TEST_DIR
+
+# Run with example config and generate output
 echo
-echo "Testing with example configuration..."
-./bin/dijester --config example-config.toml &> /tmp/config_test_output.txt
-if grep -q "Initialized 2 active sources" /tmp/config_test_output.txt; then
-    echo -e "${GREEN}✓ Configuration test passed${NC}"
-else
+echo "Testing digest generation with example configuration..."
+./bin/dijester --config example-config.toml --output $TEST_DIR/digest.md &> /tmp/config_test_output.txt
+if ! grep -q "Initialized 2 active sources" /tmp/config_test_output.txt; then
     echo -e "${RED}✗ Configuration test failed${NC}"
     cat /tmp/config_test_output.txt
     exit 1
 fi
+
+# Check if the output file exists
+if [ ! -f $TEST_DIR/digest.md ]; then
+    echo -e "${RED}✗ Output file not created!${NC}"
+    exit 1
+fi
+
+# Check the content of the output file
+if ! grep -q "My Daily News Digest" $TEST_DIR/digest.md; then
+    echo -e "${RED}✗ Output file does not contain expected title!${NC}"
+    cat $TEST_DIR/digest.md | head -n 10
+    exit 1
+fi
+
+echo -e "${GREEN}✓ Digest generated successfully${NC}"
+echo "First 10 lines of output:"
+head -n 10 $TEST_DIR/digest.md
 
 echo
 echo -e "${GREEN}All end-to-end tests passed!${NC}"

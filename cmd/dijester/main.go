@@ -6,10 +6,15 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/shrik450/dijester/pkg/config"
 	"github.com/shrik450/dijester/pkg/fetcher"
+	"github.com/shrik450/dijester/pkg/formatter"
+	"github.com/shrik450/dijester/pkg/models"
+	"github.com/shrik450/dijester/pkg/processor"
 	"github.com/shrik450/dijester/pkg/source"
 	"github.com/shrik450/dijester/pkg/source/hackernews"
 	"github.com/shrik450/dijester/pkg/source/rss"
@@ -34,6 +39,8 @@ var sourceFactories = map[string]source.Factory{
 func main() {
 	// Parse command line flags
 	configPath := flag.String("config", "", "Path to config file")
+	outputPath := flag.String("output", "", "Path to output file (overrides config)")
+	outputFormat := flag.String("format", "", "Output format: markdown (overrides config)")
 	testSource := flag.String("test-source", "", "Test a specific source (rss or hackernews)")
 	flag.Parse()
 
@@ -68,7 +75,41 @@ func main() {
 	}
 	log.Printf("Initialized %d active sources", len(activeSources))
 
-	// Test by fetching from each source
+	// Create content processor
+	proc := processor.NewReadabilityProcessor()
+	procOpts := processor.DefaultOptions()
+	
+	// Create formatter registry and register formatters
+	formatterRegistry := formatter.NewRegistry()
+	formatter.RegisterDefaultFormatters(formatterRegistry)
+	
+	// Determine output format (command line overrides config)
+	format := cfg.Digest.Format
+	if *outputFormat != "" {
+		format = formatter.Format(*outputFormat)
+	}
+	
+	// Get the formatter
+	fmt, ok := formatterRegistry.Get(format)
+	if !ok {
+		log.Fatalf("Unsupported output format: %s", format)
+	}
+	
+	// Prepare formatter options from config
+	fmtOpts := &cfg.Formatting
+	if !fmtOpts.IncludeSummary {
+		// Ensure we have default values if not specified in config
+		fmtOpts = formatter.DefaultOptions()
+	}
+
+	// Create digest
+	digest := &models.Digest{
+		Title:       cfg.Digest.Title,
+		GeneratedAt: time.Now(),
+		Articles:    make([]*models.Article, 0),
+	}
+
+	// Fetch articles from all sources
 	ctx := context.Background()
 	for _, src := range activeSources {
 		log.Printf("Fetching from source: %s", src.Name())
@@ -79,10 +120,41 @@ func main() {
 		}
 		log.Printf("Fetched %d articles from %s", len(articles), src.Name())
 
-		// Print first article title for each source
-		if len(articles) > 0 {
-			log.Printf("First article: %s", articles[0].Title)
+		// Process each article
+		for _, article := range articles {
+			if err := proc.Process(article, procOpts); err != nil {
+				log.Printf("Error processing article %s: %v", article.Title, err)
+				continue
+			}
+			
+			// Add the processed article to the digest
+			digest.Articles = append(digest.Articles, article)
 		}
+	}
+	
+	// Determine output path (command line overrides config)
+	finalOutputPath := cfg.Digest.OutputPath
+	if *outputPath != "" {
+		finalOutputPath = *outputPath
+	}
+	
+	// Ensure the output directory exists
+	outputDir := filepath.Dir(finalOutputPath)
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		log.Fatalf("Error creating output directory: %v", err)
+	}
+
+	// Create the output file
+	file, err := os.Create(finalOutputPath)
+	if err != nil {
+		log.Fatalf("Error creating output file: %v", err)
+	}
+	defer file.Close()
+
+	// Format and write the digest
+	log.Printf("Writing digest with %d articles to %s", len(digest.Articles), finalOutputPath)
+	if err := fmt.Format(file, digest, fmtOpts); err != nil {
+		log.Fatalf("Error formatting digest: %v", err)
 	}
 
 	log.Println("Dijester completed successfully")
