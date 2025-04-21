@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/go-shiori/go-readability"
+	"golang.org/x/net/html"
 
 	"github.com/shrik450/dijester/pkg/models"
 )
@@ -99,37 +100,66 @@ func (p *ReadabilityProcessor) Process(article *models.Article, opts *Options) e
 	return nil
 }
 
-// removeHTMLTags removes specified HTML tags from content.
-// This is a simplified implementation - in production, use a proper HTML parser.
+// removeHTMLTags uses proper HTML parsing to remove all instances of a given tag from HTML content.
 func removeHTMLTags(content, tagName string) string {
-	openTag := "<" + tagName
-	closeTag := "</" + tagName + ">"
+	// Parse the HTML document
+	doc, err := html.Parse(strings.NewReader(content))
+	if err != nil {
+		// If parsing fails, return the original content
+		return content
+	}
 
-	var result bytes.Buffer
-	remainder := content
+	// Create a buffer for the modified HTML
+	var buf bytes.Buffer
 
-	for {
-		openIndex := strings.Index(remainder, openTag)
-		if openIndex == -1 {
-			// No more tags to remove
-			result.WriteString(remainder)
-			break
+	// Remove tags by traversing the DOM
+	var traverse func(*html.Node)
+	traverse = func(n *html.Node) {
+		// If this is the tag we want to remove, skip it entirely
+		if n.Type == html.ElementNode && strings.EqualFold(n.Data, tagName) {
+			return
 		}
 
-		// Write everything before the tag
-		result.WriteString(remainder[:openIndex])
+		// For all other nodes, render them
+		if n.Type == html.ElementNode {
+			buf.WriteByte('<')
+			buf.WriteString(n.Data)
+			for _, attr := range n.Attr {
+				buf.WriteByte(' ')
+				buf.WriteString(attr.Key)
+				buf.WriteString(`="`)
+				buf.WriteString(html.EscapeString(attr.Val))
+				buf.WriteByte('"')
+			}
+			buf.WriteByte('>')
 
-		// Find the closing tag
-		remainder = remainder[openIndex:]
-		closeIndex := strings.Index(remainder, closeTag)
-		if closeIndex == -1 {
-			// No closing tag found, just remove the opening tag
-			remainder = strings.Replace(remainder, openTag, "", 1)
-		} else {
-			// Skip to after the closing tag
-			remainder = remainder[closeIndex+len(closeTag):]
+			// Process all children
+			for c := n.FirstChild; c != nil; c = c.NextSibling {
+				traverse(c)
+			}
+
+			// Close the tag
+			buf.WriteString("</")
+			buf.WriteString(n.Data)
+			buf.WriteByte('>')
+		} else if n.Type == html.TextNode {
+			buf.WriteString(n.Data)
+		} else if n.Type == html.CommentNode {
+			buf.WriteString("<!--")
+			buf.WriteString(n.Data)
+			buf.WriteString("-->")
+		} else if n.Type == html.DoctypeNode {
+			buf.WriteString("<!DOCTYPE ")
+			buf.WriteString(n.Data)
+			buf.WriteByte('>')
 		}
 	}
 
-	return result.String()
+	// Process all top-level nodes
+	for c := doc.FirstChild; c != nil; c = c.NextSibling {
+		traverse(c)
+	}
+
+	result := buf.String()
+	return result
 }
