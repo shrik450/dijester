@@ -59,7 +59,8 @@ func TestHackerNewsSource_Configure(t *testing.T) {
 		t.Errorf("Expected minScore 200, got %d", source.minScore)
 	}
 
-	if len(source.categories) != 2 || source.categories[0] != "front_page" || source.categories[1] != "new" {
+	if len(source.categories) != 2 || source.categories[0] != "front_page" ||
+		source.categories[1] != "new" {
 		t.Errorf("Expected categories ['front_page', 'new'], got %v", source.categories)
 	}
 
@@ -117,11 +118,46 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 	}
 
 	// Add mock items
-	responseMap[fmt.Sprintf(itemURLFormat, 100)] = mockItem(100, "High Score Item", 150, "user1", false, false)
-	responseMap[fmt.Sprintf(itemURLFormat, 101)] = mockItem(101, "Low Score Item", 50, "user2", false, false)
-	responseMap[fmt.Sprintf(itemURLFormat, 102)] = mockItem(102, "Dead Item", 120, "user3", true, false)
-	responseMap[fmt.Sprintf(itemURLFormat, 103)] = mockItem(103, "Deleted Item", 130, "user4", false, true)
-	responseMap[fmt.Sprintf(itemURLFormat, 104)] = mockItem(104, "Non-story Item", 140, "user5", false, false)
+	responseMap[fmt.Sprintf(itemURLFormat, 100)] = mockItem(
+		100,
+		"High Score Item",
+		150,
+		"user1",
+		false,
+		false,
+	)
+	responseMap[fmt.Sprintf(itemURLFormat, 101)] = mockItem(
+		101,
+		"Low Score Item",
+		50,
+		"user2",
+		false,
+		false,
+	)
+	responseMap[fmt.Sprintf(itemURLFormat, 102)] = mockItem(
+		102,
+		"Dead Item",
+		120,
+		"user3",
+		true,
+		false,
+	)
+	responseMap[fmt.Sprintf(itemURLFormat, 103)] = mockItem(
+		103,
+		"Deleted Item",
+		130,
+		"user4",
+		false,
+		true,
+	)
+	responseMap[fmt.Sprintf(itemURLFormat, 104)] = mockItem(
+		104,
+		"Non-story Item",
+		140,
+		"user5",
+		false,
+		false,
+	)
 
 	// Mock item 104 as a comment
 	var item104 HNItem
@@ -211,6 +247,9 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 	}
 
 	if comments, ok := articles[0].Metadata["comments"].(int); !ok || comments != 10 {
-		t.Errorf("Expected metadata to contain comments 10, got %v", articles[0].Metadata["comments"])
+		t.Errorf(
+			"Expected metadata to contain comments 10, got %v",
+			articles[0].Metadata["comments"],
+		)
 	}
 }

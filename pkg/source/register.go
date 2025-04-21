@@ -33,7 +33,11 @@ func RegisterDefaultSources(registry *Registry, cfg *config.Config, factories ma
 }
 
 // InitializeSources configures and returns active sources from config.
-func InitializeSources(registry *Registry, cfg *config.Config, factories map[string]Factory) ([]Source, error) {
+func InitializeSources(
+	registry *Registry,
+	cfg *config.Config,
+	factories map[string]Factory,
+) ([]Source, error) {
 	activeSources := make([]Source, 0, len(cfg.Sources))
 
 	// Create a standard HTTP fetcher for configuring new sources

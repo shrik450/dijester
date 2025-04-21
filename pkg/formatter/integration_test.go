@@ -76,7 +76,10 @@ func TestProcessAndFormat(t *testing.T) {
 
 	for _, navElement := range navigationElements {
 		if strings.Contains(output, navElement) {
-			t.Errorf("Formatted output should not contain navigation element '%s', but it does", navElement)
+			t.Errorf(
+				"Formatted output should not contain navigation element '%s', but it does",
+				navElement,
+			)
 		}
 	}
 }

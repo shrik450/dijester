@@ -67,9 +67,11 @@ func TestHTTPFetcher_FetchURL(t *testing.T) {
 	}
 
 	// Test error handling for non-200 response
-	errorServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
+	errorServer := httptest.NewServer(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		}),
+	)
 	defer errorServer.Close()
 
 	f = NewHTTPFetcher(WithClient(errorServer.Client()))
@@ -172,7 +174,11 @@ func TestLimitedFetcher(t *testing.T) {
 
 	// Verify that we waited at least the interval
 	if elapsed < interval {
-		t.Errorf("Expected to wait at least %v between requests, but only waited %v", interval, elapsed)
+		t.Errorf(
+			"Expected to wait at least %v between requests, but only waited %v",
+			interval,
+			elapsed,
+		)
 	}
 
 	// Verify that both requests were made
