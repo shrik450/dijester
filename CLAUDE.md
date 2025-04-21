@@ -33,3 +33,18 @@ Tools are automatically installed via Go modules.
 - **Naming**: Use camelCase for unexported and PascalCase for exported names
 - **Comments**: Document all exported functions, types, and packages
 - **Architecture**: Follow clean architecture principles with clear separation of concerns
+
+## Process Guidelines
+
+- After every change, make a commit.
+- Follow a trunk-based development model around the `main` branch.
+- If the change you are making differs in purpose from the last commit, switch
+  back to main, create a new branch and then commit your changes.
+- Commit messages should be clear and concise. A body is not required unless it
+  substantially clarifies the change. The first line MUST be less than 72
+  characters.
+- Once you are done with a chunk of changes related to a single purpose, create
+  a pull request. The pull request should be clear and concise. It should
+  summarize the changes you made and why they are necessary. Use the `gh` CLI to
+  post PRs.
+
