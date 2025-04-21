@@ -1,11 +1,13 @@
 # Dijester Development Plan
 
 ## Step 1: Project Setup
+
 - [x] Initialize Go module
 - [x] Create basic directory structure
 - [x] Write initial documentation
 
 ## Step 2: Core Infrastructure
+
 - [x] Define core interfaces and types
   - [x] Source interface
   - [x] Content model
@@ -16,6 +18,7 @@
   - [x] Add validation
 
 ## Step 3: Source Implementation
+
 - [x] Create HTTP fetcher utility
 - [x] Implement RSS feed source
 - [x] Add sample source implementations
@@ -23,41 +26,57 @@
   - [x] Hacker News implementation
 
 ## Step 4: Content Processing
-- [ ] Implement content normalizer
+
+- [x] Implement content processor using go-readability
+  - [x] Extract and normalize article content
+  - [x] Extract metadata (title, author, summary)
+  - [x] Add content sanitization (remove unwanted tags)
 - [ ] Create HTML to plain text converter
-- [ ] Add metadata extractor
-- [ ] Build content sanitizer
 
 ## Step 5: Output Formats
-- [ ] Design digest format structure
-- [ ] Implement Markdown formatter
+
+- [x] Design digest format structure
+- [x] Implement Markdown formatter
+  - [x] Basic digest formatting
+  - [x] HTML to Markdown conversion
 - [ ] Create EPUB generator
-- [ ] Add formatting options
+- [x] Add formatting options
 
 ## Step 6: Command Line Interface
-- [ ] Design CLI flags and options
-- [ ] Implement configuration file loading
+
+- [x] Design CLI flags and options
+- [x] Implement configuration file loading
 - [ ] Add output path handling
 - [ ] Create progress reporting
+- [ ] Implement formatter selection
 
 ## Step 7: Error Handling & Logging
+
 - [ ] Implement robust error handling
-- [ ] Add logging infrastructure
+- [x] Add basic logging infrastructure
 - [ ] Create user-friendly error messages
 
 ## Step 8: Performance & Optimization
+
 - [ ] Add concurrent fetching
 - [ ] Implement caching
-- [ ] Add rate limiting for sources
+- [x] Add rate limiting for sources
 
 ## Step 9: Testing & Documentation
-- [ ] Write unit tests for core components
-- [ ] Create integration tests
+
+- [x] Write unit tests for core components
+  - [x] Source implementations (RSS, HackerNews)
+  - [x] HTTP fetcher and rate limiter
+  - [x] Content processor
+- [x] Create integration tests
+  - [x] Content processor with realistic HTML
 - [ ] Update documentation
 - [ ] Add examples
 
 ## Step 10: Final Polish
+
 - [ ] Conduct performance testing
-- [ ] Add sample configuration files
+- [x] Add sample configuration files
 - [ ] Create user guide
 - [ ] Package for distribution
+
