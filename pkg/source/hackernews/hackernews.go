@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/shrik450/dijester/pkg/models"
+	"github.com/shrik450/dijester/pkg/processor"
 	"github.com/shrik450/dijester/pkg/source"
 )
 
@@ -28,6 +29,8 @@ type Source struct {
 	minScore    int
 	categories  []string
 	fetcher     APIFetcher
+	processor   processor.Processor
+	procOptions *processor.Options
 }
 
 // ensure Source implements the source.Source interface
@@ -41,6 +44,8 @@ func New(fetcher APIFetcher) *Source {
 		minScore:    100,
 		categories:  []string{"front_page"},
 		fetcher:     fetcher,
+		processor:   processor.NewReadabilityProcessor(),
+		procOptions: processor.DefaultOptions(),
 	}
 }
 
@@ -51,22 +56,18 @@ func (s *Source) Name() string {
 
 // Configure sets up the source with the provided configuration.
 func (s *Source) Configure(config map[string]interface{}) error {
-	// Set custom name if provided
 	if name, ok := config["name"].(string); ok && name != "" {
 		s.name = name
 	}
 
-	// Get max articles (optional)
 	if max, ok := config["max_articles"].(int); ok && max > 0 {
 		s.maxArticles = max
 	}
 
-	// Get minimum score (optional)
 	if score, ok := config["min_score"].(int); ok && score > 0 {
 		s.minScore = score
 	}
 
-	// Get categories (optional)
 	if cats, ok := config["categories"].([]interface{}); ok && len(cats) > 0 {
 		s.categories = make([]string, 0, len(cats))
 		for _, cat := range cats {
@@ -157,6 +158,19 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 
 		if article.URL == "" {
 			article.URL = article.Metadata["comments_url"].(string)
+		} else {
+			articleContent, err := s.fetcher.FetchURLAsString(ctx, article.URL)
+			if err == nil {
+				article.Content = articleContent
+
+				if err := s.processor.Process(article, s.procOptions); err != nil {
+					if article.Content == "" && item.Text != "" {
+						article.Content = item.Text
+					}
+				}
+			} else if item.Text != "" {
+				article.Content = item.Text
+			}
 		}
 
 		article.Summary = fmt.Sprintf("%d points, %d comments",
