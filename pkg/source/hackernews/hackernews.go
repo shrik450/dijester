@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/shrik450/dijester/pkg/models"
+	"github.com/shrik450/dijester/pkg/processor"
 	"github.com/shrik450/dijester/pkg/source"
 )
 
@@ -28,6 +29,8 @@ type Source struct {
 	minScore    int
 	categories  []string
 	fetcher     APIFetcher
+	processor   processor.Processor
+	procOptions *processor.Options
 }
 
 // ensure Source implements the source.Source interface
@@ -41,6 +44,8 @@ func New(fetcher APIFetcher) *Source {
 		minScore:    100,
 		categories:  []string{"front_page"},
 		fetcher:     fetcher,
+		processor:   processor.NewReadabilityProcessor(),
+		procOptions: processor.DefaultOptions(),
 	}
 }
 
@@ -157,6 +162,24 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 
 		if article.URL == "" {
 			article.URL = article.Metadata["comments_url"].(string)
+			// Self-posts already have content in the Text field
+		} else {
+			// Fetch the actual article content for non-self posts
+			articleContent, err := s.fetcher.FetchURLAsString(ctx, article.URL)
+			if err == nil {
+				article.Content = articleContent
+				
+				// Process the content with readability
+				if err := s.processor.Process(article, s.procOptions); err != nil {
+					// If processing fails, fallback to the HN text if available
+					if article.Content == "" && item.Text != "" {
+						article.Content = item.Text
+					}
+				}
+			} else if item.Text != "" {
+				// Fallback to the HN text if available
+				article.Content = item.Text
+			}
 		}
 
 		article.Summary = fmt.Sprintf("%d points, %d comments",

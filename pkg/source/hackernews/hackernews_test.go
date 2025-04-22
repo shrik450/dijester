@@ -173,6 +173,10 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 			if response, ok := responseMap[url]; ok {
 				return response, nil
 			}
+			// Mock behavior for article URLs
+			if url == "https://example.com/item100" || url == "https://example.com/item101" {
+				return "<html><body><article><h1>Article Content</h1><p>This is the full article content.</p></article></body></html>", nil
+			}
 			return "", fmt.Errorf("unexpected URL: %s", url)
 		},
 	}
