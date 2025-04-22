@@ -13,9 +13,6 @@ code in this repository.
 - Lint: `make lint`
 - Format: `make fmt`
 - End-to-end tests: `make e2e-test`
-- Format + Lint + Test: `make check`
-
-Tools are automatically installed via Go modules.
 
 ## Code Quality Guidelines
 
