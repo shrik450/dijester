@@ -19,7 +19,6 @@ type FeedFetcher interface {
 // Source implements an RSS/Atom feed source.
 type Source struct {
 	name        string
-	description string
 	url         string
 	maxArticles int
 	fetcher     FeedFetcher
@@ -33,7 +32,6 @@ var _ source.Source = (*Source)(nil)
 func New(fetcher FeedFetcher) *Source {
 	return &Source{
 		name:        "rss",
-		description: "RSS/Atom feed source",
 		maxArticles: 10,
 		fetcher:     fetcher,
 		parser:      gofeed.NewParser(),
@@ -45,11 +43,6 @@ func (s *Source) Name() string {
 	return s.name
 }
 
-// Description returns a description of the source.
-func (s *Source) Description() string {
-	return s.description
-}
-
 // Configure sets up the source with the provided configuration.
 func (s *Source) Configure(config map[string]interface{}) error {
 	// Set custom name if provided
@@ -57,14 +50,12 @@ func (s *Source) Configure(config map[string]interface{}) error {
 		s.name = name
 	}
 
-	// Get feed URL (required)
 	url, ok := config["url"].(string)
 	if !ok || url == "" {
 		return fmt.Errorf("rss source requires a 'url' configuration value")
 	}
 	s.url = url
 
-	// Get max articles (optional)
 	if max, ok := config["max_articles"].(int); ok && max > 0 {
 		s.maxArticles = max
 	}
@@ -74,19 +65,16 @@ func (s *Source) Configure(config map[string]interface{}) error {
 
 // Fetch retrieves articles from the RSS feed.
 func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
-	// Fetch the feed content
 	content, err := s.fetcher.FetchURLAsString(ctx, s.url)
 	if err != nil {
 		return nil, fmt.Errorf("fetching RSS feed: %w", err)
 	}
 
-	// Parse the feed
 	feed, err := s.parser.ParseString(content)
 	if err != nil {
 		return nil, fmt.Errorf("parsing RSS feed: %w", err)
 	}
 
-	// Convert feed items to articles
 	articles := make([]*models.Article, 0, len(feed.Items))
 	for _, item := range feed.Items {
 		// Skip items without content
@@ -104,23 +92,19 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 			publishedAt = time.Now()
 		}
 
-		// Determine content and summary
 		content := item.Content
 		summary := item.Description
 
-		// If content is empty, use description as content
 		if content == "" {
 			content = item.Description
 			summary = ""
 		}
 
-		// Extract author
 		author := ""
 		if item.Author != nil {
 			author = item.Author.Name
 		}
 
-		// Create the article
 		article := &models.Article{
 			Title:       item.Title,
 			Author:      author,
@@ -135,7 +119,6 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 
 		articles = append(articles, article)
 
-		// Stop if we have enough articles
 		if len(articles) >= s.maxArticles {
 			break
 		}

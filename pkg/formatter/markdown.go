@@ -28,7 +28,6 @@ func (f *MarkdownFormatter) Format(w io.Writer, digest *models.Digest, opts *Opt
 		return fmt.Errorf("digest cannot be nil")
 	}
 
-	// Use default options if none provided
 	if opts == nil {
 		opts = &Options{
 			IncludeSummary:  true,
@@ -36,23 +35,19 @@ func (f *MarkdownFormatter) Format(w io.Writer, digest *models.Digest, opts *Opt
 		}
 	}
 
-	// Write digest header
 	fmt.Fprintf(w, "# %s\n\n", digest.Title)
 	fmt.Fprintf(w, "Generated on: %s\n\n", digest.GeneratedAt.Format(time.RFC1123))
 	fmt.Fprintf(w, "## Contents\n\n")
 
-	// Create table of contents
 	for i, article := range digest.Articles {
 		fmt.Fprintf(w, "%d. [%s](#article-%d)\n", i+1, article.Title, i+1)
 	}
 	fmt.Fprintln(w, "")
 
-	// Write each article
 	for i, article := range digest.Articles {
 		fmt.Fprintf(w, "<a id=\"article-%d\"></a>\n", i+1)
 		fmt.Fprintf(w, "## %s\n\n", article.Title)
 
-		// Add source and author info
 		if article.Author != "" {
 			fmt.Fprintf(w, "**Author:** %s  \n", article.Author)
 		}
@@ -61,20 +56,16 @@ func (f *MarkdownFormatter) Format(w io.Writer, digest *models.Digest, opts *Opt
 		}
 		fmt.Fprintf(w, "**Source:** [%s](%s)  \n\n", article.SourceName, article.URL)
 
-		// Add tags if present
 		if len(article.Tags) > 0 {
 			fmt.Fprintf(w, "**Tags:** %s  \n\n", strings.Join(article.Tags, ", "))
 		}
 
-		// Add summary if requested and available
 		if opts.IncludeSummary && article.Summary != "" {
 			fmt.Fprintf(w, "### Summary\n\n%s\n\n", article.Summary)
 		}
 
-		// Add the main content
 		fmt.Fprintf(w, "### Content\n\n%s\n\n", HTMLToMarkdown(article.Content))
 
-		// Add metadata if requested
 		if opts.IncludeMetadata && len(article.Metadata) > 0 {
 			fmt.Fprintf(w, "### Metadata\n\n")
 			for key, value := range article.Metadata {
@@ -83,7 +74,6 @@ func (f *MarkdownFormatter) Format(w io.Writer, digest *models.Digest, opts *Opt
 			fmt.Fprintln(w, "")
 		}
 
-		// Add a separator between articles
 		if i < len(digest.Articles)-1 {
 			fmt.Fprintf(w, "---\n\n")
 		}

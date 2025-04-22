@@ -24,7 +24,6 @@ type APIFetcher interface {
 // Source implements a Hacker News source.
 type Source struct {
 	name        string
-	description string
 	maxArticles int
 	minScore    int
 	categories  []string
@@ -38,7 +37,6 @@ var _ source.Source = (*Source)(nil)
 func New(fetcher APIFetcher) *Source {
 	return &Source{
 		name:        "hackernews",
-		description: "Hacker News top stories",
 		maxArticles: 10,
 		minScore:    100,
 		categories:  []string{"front_page"},
@@ -49,11 +47,6 @@ func New(fetcher APIFetcher) *Source {
 // Name returns the source name.
 func (s *Source) Name() string {
 	return s.name
-}
-
-// Description returns a description of the source.
-func (s *Source) Description() string {
-	return s.description
 }
 
 // Configure sets up the source with the provided configuration.
@@ -104,60 +97,49 @@ type HNItem struct {
 
 // Fetch retrieves articles from Hacker News.
 func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
-	// Fetch the top stories
 	content, err := s.fetcher.FetchURLAsString(ctx, topStoriesURL)
 	if err != nil {
 		return nil, fmt.Errorf("fetching top stories: %w", err)
 	}
 
-	// Parse the story IDs
 	var storyIDs []int
 	if err := json.Unmarshal([]byte(content), &storyIDs); err != nil {
 		return nil, fmt.Errorf("parsing story IDs: %w", err)
 	}
 
-	// Limit the number of stories to fetch
 	if len(storyIDs) > s.maxArticles*2 {
 		storyIDs = storyIDs[:s.maxArticles*2]
 	}
 
-	// Fetch and process each story
 	articles := make([]*models.Article, 0, s.maxArticles)
 	for _, id := range storyIDs {
-		// Stop if we have enough articles
 		if len(articles) >= s.maxArticles {
 			break
 		}
 
-		// Fetch the story
 		itemURL := fmt.Sprintf(itemURLFormat, id)
 		content, err := s.fetcher.FetchURLAsString(ctx, itemURL)
 		if err != nil {
-			continue // Skip this item and try the next one
+			continue
 		}
 
-		// Parse the item
 		var item HNItem
 		if err := json.Unmarshal([]byte(content), &item); err != nil {
 			continue
 		}
 
-		// Skip deleted or dead items
 		if item.Deleted || item.Dead {
 			continue
 		}
 
-		// Skip items below the minimum score
 		if item.Score < s.minScore {
 			continue
 		}
 
-		// Skip non-story items
 		if item.Type != "story" {
 			continue
 		}
 
-		// Create the article
 		article := &models.Article{
 			Title:       item.Title,
 			Author:      item.By,
@@ -173,12 +155,10 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 			},
 		}
 
-		// Set URL to comments URL if no URL provided
 		if article.URL == "" {
 			article.URL = article.Metadata["comments_url"].(string)
 		}
 
-		// Add comment count to summary
 		article.Summary = fmt.Sprintf("%d points, %d comments",
 			item.Score, item.Descendants)
 

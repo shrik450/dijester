@@ -13,16 +13,13 @@ type Factory func(fetcher interface{}) Source
 
 // RegisterDefaultSources registers the default source implementations.
 func RegisterDefaultSources(registry *Registry, cfg *config.Config, factories map[string]Factory) {
-	// Create HTTP fetcher
 	httpFetcher := fetcher.NewHTTPFetcher(
 		fetcher.WithUserAgent(cfg.Global.UserAgent),
 		fetcher.WithTimeout(cfg.Global.Timeout),
 	)
 
-	// Create rate-limited fetcher
 	limiter := fetcher.NewLimitedFetcher(httpFetcher, 1*time.Second)
 
-	// Register sources using factories
 	for name, factory := range factories {
 		if name == "hackernews" {
 			registry.Register(factory(limiter.Fetcher))
@@ -33,7 +30,11 @@ func RegisterDefaultSources(registry *Registry, cfg *config.Config, factories ma
 }
 
 // InitializeSources configures and returns active sources from config.
-func InitializeSources(registry *Registry, cfg *config.Config, factories map[string]Factory) ([]Source, error) {
+func InitializeSources(
+	registry *Registry,
+	cfg *config.Config,
+	factories map[string]Factory,
+) ([]Source, error) {
 	activeSources := make([]Source, 0, len(cfg.Sources))
 
 	// Create a standard HTTP fetcher for configuring new sources
@@ -45,25 +46,21 @@ func InitializeSources(registry *Registry, cfg *config.Config, factories map[str
 			continue
 		}
 
-		// Get source implementation
 		impl, ok := registry.Get(sourceCfg.Type)
 		if !ok {
-			// Try to get by custom name
 			impl, ok = registry.Get(name)
 			if !ok {
-				continue // Skip unknown sources
+				continue
 			}
 		}
 
-		// Create a new instance of the source using the factory
 		factory, ok := factories[impl.Name()]
 		if !ok {
-			continue // Skip unknown source types
+			continue
 		}
 
 		source := factory(httpFetcher)
 
-		// Configure the source
 		if err := source.Configure(sourceCfg.Options); err != nil {
 			return nil, err
 		}

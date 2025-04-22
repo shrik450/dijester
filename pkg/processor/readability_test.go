@@ -54,7 +54,10 @@ func TestReadabilityProcessor_Process_SimpleHTML(t *testing.T) {
 
 	// Readability often uses the page title as the article title, especially for simple HTML
 	if article.Title != "Page Title" && article.Title != "Test Article" {
-		t.Errorf("Expected title to be either 'Page Title' or 'Test Article', got '%s'", article.Title)
+		t.Errorf(
+			"Expected title to be either 'Page Title' or 'Test Article', got '%s'",
+			article.Title,
+		)
 	}
 }
 
@@ -116,7 +119,10 @@ func TestReadabilityProcessor_Process_WithOptions(t *testing.T) {
 
 		err := p.Process(article, opts)
 		if err != ErrContentProcessingFailed {
-			t.Errorf("Expected ErrContentProcessingFailed for content shorter than minimum, got %v", err)
+			t.Errorf(
+				"Expected ErrContentProcessingFailed for content shorter than minimum, got %v",
+				err,
+			)
 		}
 	})
 
@@ -135,7 +141,10 @@ func TestReadabilityProcessor_Process_WithOptions(t *testing.T) {
 		}
 
 		if len(article.Content) > 20 {
-			t.Errorf("Processed content length should be limited to MaxContentLength, got %d", len(article.Content))
+			t.Errorf(
+				"Processed content length should be limited to MaxContentLength, got %d",
+				len(article.Content),
+			)
 		}
 	})
 }

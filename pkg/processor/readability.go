@@ -35,10 +35,8 @@ func (p *ReadabilityProcessor) Process(article *models.Article, opts *Options) e
 		return errors.New("article content cannot be empty")
 	}
 
-	// Parse the content using readability
 	parser := readability.NewParser()
 
-	// Set parser options based on our options
 	if opts != nil {
 		if v, ok := opts.AdditionalOptions["classesToPreserve"]; ok {
 			if classes, ok := v.([]string); ok {
@@ -47,19 +45,16 @@ func (p *ReadabilityProcessor) Process(article *models.Article, opts *Options) e
 		}
 	}
 
-	// Parse URL for readability
 	articleURL, err := url.Parse(article.URL)
 	if err != nil {
 		return err
 	}
 
-	// Parse the content
 	result, err := parser.Parse(strings.NewReader(article.Content), articleURL)
 	if err != nil {
 		return err
 	}
 
-	// Apply length constraints if specified
 	content := result.Content
 	if opts != nil {
 		if opts.MinContentLength > 0 && len(content) < opts.MinContentLength {
@@ -70,21 +65,17 @@ func (p *ReadabilityProcessor) Process(article *models.Article, opts *Options) e
 			content = content[:opts.MaxContentLength]
 		}
 
-		// Filter out images if not wanted
 		if !opts.IncludeImages {
 			content = removeHTMLTags(content, "img")
 		}
 
-		// Filter out tables if not wanted
 		if !opts.IncludeTables {
 			content = removeHTMLTags(content, "table")
 		}
 	}
 
-	// Update the article with processed content
 	article.Content = content
 
-	// Extract or update article metadata if not already set
 	if article.Title == "" {
 		article.Title = result.Title
 	}
@@ -102,26 +93,21 @@ func (p *ReadabilityProcessor) Process(article *models.Article, opts *Options) e
 
 // removeHTMLTags uses proper HTML parsing to remove all instances of a given tag from HTML content.
 func removeHTMLTags(content, tagName string) string {
-	// Parse the HTML document
 	doc, err := html.Parse(strings.NewReader(content))
 	if err != nil {
-		// If parsing fails, return the original content
 		return content
 	}
 
-	// Create a buffer for the modified HTML
 	var buf bytes.Buffer
 
-	// Remove tags by traversing the DOM
 	var traverse func(*html.Node)
 	traverse = func(n *html.Node) {
-		// If this is the tag we want to remove, skip it entirely
 		if n.Type == html.ElementNode && strings.EqualFold(n.Data, tagName) {
 			return
 		}
 
-		// For all other nodes, render them
-		if n.Type == html.ElementNode {
+		switch n.Type {
+		case html.ElementNode:
 			buf.WriteByte('<')
 			buf.WriteString(n.Data)
 			for _, attr := range n.Attr {
@@ -133,22 +119,20 @@ func removeHTMLTags(content, tagName string) string {
 			}
 			buf.WriteByte('>')
 
-			// Process all children
 			for c := n.FirstChild; c != nil; c = c.NextSibling {
 				traverse(c)
 			}
 
-			// Close the tag
 			buf.WriteString("</")
 			buf.WriteString(n.Data)
 			buf.WriteByte('>')
-		} else if n.Type == html.TextNode {
+		case html.TextNode:
 			buf.WriteString(n.Data)
-		} else if n.Type == html.CommentNode {
+		case html.CommentNode:
 			buf.WriteString("<!--")
 			buf.WriteString(n.Data)
 			buf.WriteString("-->")
-		} else if n.Type == html.DoctypeNode {
+		case html.DoctypeNode:
 			buf.WriteString("<!DOCTYPE ")
 			buf.WriteString(n.Data)
 			buf.WriteByte('>')

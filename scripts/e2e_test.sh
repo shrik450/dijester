@@ -45,7 +45,7 @@ mkdir -p $TEST_DIR
 # Run with example config and generate output
 echo
 echo "Testing digest generation with example configuration..."
-./bin/dijester --config example-config.toml --output $TEST_DIR/digest.md &> /tmp/config_test_output.txt
+./bin/dijester --config example-config-md.toml --output $TEST_DIR/digest.md &> /tmp/config_test_output.txt
 if ! grep -q "Initialized 2 active sources" /tmp/config_test_output.txt; then
     echo -e "${RED}✗ Configuration test failed${NC}"
     cat /tmp/config_test_output.txt

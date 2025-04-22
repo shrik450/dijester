@@ -178,7 +178,10 @@ func TestRSSSource_Fetch(t *testing.T) {
 
 	// In our implementation, when we use description as content, summary is empty
 	if article.Summary != "" {
-		t.Errorf("Expected empty summary when content is from description, got '%s'", article.Summary)
+		t.Errorf(
+			"Expected empty summary when content is from description, got '%s'",
+			article.Summary,
+		)
 	}
 
 	if article.Author != "Author One" {
@@ -199,7 +202,10 @@ func TestRSSSource_Fetch(t *testing.T) {
 		t.Errorf("Expected content to fall back to description, got '%s'", article.Content)
 	}
 	if article.Summary != "" {
-		t.Errorf("Expected empty summary when content falls back to description, got '%s'", article.Summary)
+		t.Errorf(
+			"Expected empty summary when content falls back to description, got '%s'",
+			article.Summary,
+		)
 	}
 
 	// Test max articles limit

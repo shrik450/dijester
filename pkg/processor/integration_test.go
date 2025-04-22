@@ -62,7 +62,10 @@ func TestReadabilityProcessor_RealWorldHTML(t *testing.T) {
 
 	for _, navElement := range navigationElements {
 		if strings.Contains(article.Content, navElement) {
-			t.Errorf("Processed content should not contain navigation element '%s', but it does", navElement)
+			t.Errorf(
+				"Processed content should not contain navigation element '%s', but it does",
+				navElement,
+			)
 		}
 	}
 

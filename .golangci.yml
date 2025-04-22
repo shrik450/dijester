@@ -1,37 +1,41 @@
+version: "2"
+
 linters:
-  enable:
+  disable:
+    - gocyclo
     - errcheck
-    - gosimple
-    - govet
-    - ineffassign
-    - staticcheck
-    - unused
-    - gofmt
-    - goimports
-    - revive
+    - dupl
+  settings:
+    revive:
+      rules:
+        - name: exported
+          severity: warning
+          disabled: false
 
-linters-settings:
-  gofmt:
-    simplify: true
-  revive:
+  exclusions:
     rules:
-      - name: exported
-        severity: warning
-        disabled: false
-  goimports:
-    local-prefixes: github.com/shrik450/dijester
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+      - path-except: _test\.go
+        linters:
+          - forbidigo
+    paths-except:
+      - bin
+      - vendor
 
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-  exclude-dirs:
-    - bin
-    - vendor
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+    - golines
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/shrik450/dijester
 
 run:
   timeout: 5m
-
-service:
-  golangci-lint-version: 1.64.x
