@@ -17,12 +17,10 @@ const (
 	itemURLFormat = apiBaseURL + "/item/%d.json"
 )
 
-// APIFetcher defines the interface for fetching from the API
 type APIFetcher interface {
 	FetchURLAsString(ctx context.Context, url string) (string, error)
 }
 
-// Source implements a Hacker News source.
 type Source struct {
 	name        string
 	maxArticles int
@@ -33,10 +31,8 @@ type Source struct {
 	procOptions *processor.Options
 }
 
-// ensure Source implements the source.Source interface
 var _ source.Source = (*Source)(nil)
 
-// New creates a new Hacker News source.
 func New(fetcher APIFetcher) *Source {
 	return &Source{
 		name:        "hackernews",
@@ -49,29 +45,23 @@ func New(fetcher APIFetcher) *Source {
 	}
 }
 
-// Name returns the source name.
 func (s *Source) Name() string {
 	return s.name
 }
 
-// Configure sets up the source with the provided configuration.
 func (s *Source) Configure(config map[string]interface{}) error {
-	// Set custom name if provided
 	if name, ok := config["name"].(string); ok && name != "" {
 		s.name = name
 	}
 
-	// Get max articles (optional)
 	if max, ok := config["max_articles"].(int); ok && max > 0 {
 		s.maxArticles = max
 	}
 
-	// Get minimum score (optional)
 	if score, ok := config["min_score"].(int); ok && score > 0 {
 		s.minScore = score
 	}
 
-	// Get categories (optional)
 	if cats, ok := config["categories"].([]interface{}); ok && len(cats) > 0 {
 		s.categories = make([]string, 0, len(cats))
 		for _, cat := range cats {
@@ -84,7 +74,6 @@ func (s *Source) Configure(config map[string]interface{}) error {
 	return nil
 }
 
-// HNItem represents a Hacker News API item.
 type HNItem struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
@@ -100,7 +89,6 @@ type HNItem struct {
 	Descendants int    `json:"descendants"`
 }
 
-// Fetch retrieves articles from Hacker News.
 func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 	content, err := s.fetcher.FetchURLAsString(ctx, topStoriesURL)
 	if err != nil {
@@ -162,22 +150,17 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 
 		if article.URL == "" {
 			article.URL = article.Metadata["comments_url"].(string)
-			// Self-posts already have content in the Text field
 		} else {
-			// Fetch the actual article content for non-self posts
 			articleContent, err := s.fetcher.FetchURLAsString(ctx, article.URL)
 			if err == nil {
 				article.Content = articleContent
-				
-				// Process the content with readability
+
 				if err := s.processor.Process(article, s.procOptions); err != nil {
-					// If processing fails, fallback to the HN text if available
 					if article.Content == "" && item.Text != "" {
 						article.Content = item.Text
 					}
 				}
 			} else if item.Text != "" {
-				// Fallback to the HN text if available
 				article.Content = item.Text
 			}
 		}

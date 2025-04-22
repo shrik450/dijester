@@ -11,7 +11,6 @@ import (
 	"github.com/shrik450/dijester/pkg/fetcher"
 )
 
-// MockHTTPClient implements the HTTPClient interface for testing
 type MockHTTPClient struct {
 	DoFunc func(req *http.Request) (*http.Response, error)
 }
@@ -20,13 +19,11 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	return m.DoFunc(req)
 }
 
-// MockFetcher extends HTTPFetcher for testing
 type MockFetcher struct {
 	*fetcher.HTTPFetcher
 	MockFetchURLAsString func(ctx context.Context, url string) (string, error)
 }
 
-// FetchURLAsString overrides the HTTPFetcher method
 func (m *MockFetcher) FetchURLAsString(ctx context.Context, url string) (string, error) {
 	return m.MockFetchURLAsString(ctx, url)
 }
@@ -34,7 +31,6 @@ func (m *MockFetcher) FetchURLAsString(ctx context.Context, url string) (string,
 func TestHackerNewsSource_Configure(t *testing.T) {
 	source := New(nil)
 
-	// Test valid configuration
 	validConfig := map[string]interface{}{
 		"name":         "Custom HN",
 		"max_articles": 15,
@@ -64,7 +60,6 @@ func TestHackerNewsSource_Configure(t *testing.T) {
 		t.Errorf("Expected categories ['front_page', 'new'], got %v", source.categories)
 	}
 
-	// Test default values
 	source = New(nil)
 	err = source.Configure(map[string]interface{}{})
 	if err != nil {
@@ -89,15 +84,12 @@ func TestHackerNewsSource_Configure(t *testing.T) {
 }
 
 func TestHackerNewsSource_Fetch(t *testing.T) {
-	// Create a mock HTTP client with custom response handler
 	responseMap := make(map[string]string)
 
-	// Mock top stories list
 	topStories := []int{100, 101, 102, 103, 104}
 	topStoriesJSON, _ := json.Marshal(topStories)
 	responseMap[topStoriesURL] = string(topStoriesJSON)
 
-	// Mock story items
 	mockItem := func(id int, title string, score int, by string, isDead bool, isDeleted bool) string {
 		item := HNItem{
 			ID:          id,
@@ -117,7 +109,6 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		return string(itemJSON)
 	}
 
-	// Add mock items
 	responseMap[fmt.Sprintf(itemURLFormat, 100)] = mockItem(
 		100,
 		"High Score Item",
@@ -159,21 +150,18 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		false,
 	)
 
-	// Mock item 104 as a comment
 	var item104 HNItem
 	json.Unmarshal([]byte(responseMap[fmt.Sprintf(itemURLFormat, 104)]), &item104)
 	item104.Type = "comment"
 	item104JSON, _ := json.Marshal(item104)
 	responseMap[fmt.Sprintf(itemURLFormat, 104)] = string(item104JSON)
 
-	// Create a mock fetcher
 	mockFetcher := &MockFetcher{
 		HTTPFetcher: fetcher.NewHTTPFetcher(),
 		MockFetchURLAsString: func(ctx context.Context, url string) (string, error) {
 			if response, ok := responseMap[url]; ok {
 				return response, nil
 			}
-			// Mock behavior for article URLs
 			if url == "https://example.com/item100" || url == "https://example.com/item101" {
 				return "<html><body><article><h1>Article Content</h1><p>This is the full article content.</p></article></body></html>", nil
 			}
@@ -181,7 +169,6 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		},
 	}
 
-	// Create and configure HN source
 	source := New(mockFetcher)
 	err := source.Configure(map[string]interface{}{
 		"name":         "Test HN",
@@ -192,23 +179,16 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		t.Fatalf("Failed to configure source: %v", err)
 	}
 
-	// Fetch articles
 	ctx := context.Background()
 	articles, err := source.Fetch(ctx)
 	if err != nil {
 		t.Fatalf("Fetch returned error: %v", err)
 	}
 
-	// Should only get 1 article (100) because:
-	// - 101 is below min_score
-	// - 102 is dead
-	// - 103 is deleted
-	// - 104 is not a story
 	if len(articles) != 1 {
 		t.Fatalf("Expected 1 article, got %d", len(articles))
 	}
 
-	// Verify article content
 	article := articles[0]
 	if article.Title != "High Score Item" {
 		t.Errorf("Expected title 'High Score Item', got '%s'", article.Title)
@@ -226,7 +206,6 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		t.Errorf("Expected source name 'Test HN', got '%s'", article.SourceName)
 	}
 
-	// Test with lower min_score to include more articles
 	source = New(mockFetcher)
 	err = source.Configure(map[string]interface{}{
 		"min_score": 40,
@@ -240,12 +219,10 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		t.Fatalf("Fetch returned error: %v", err)
 	}
 
-	// Should get 2 articles (100 and 101) because we lowered min_score
 	if len(articles) != 2 {
 		t.Fatalf("Expected 2 articles with lower min_score, got %d", len(articles))
 	}
 
-	// Verify metadata contains score and comments
 	if score, ok := articles[0].Metadata["score"].(int); !ok || score != 150 {
 		t.Errorf("Expected metadata to contain score 150, got %v", articles[0].Metadata["score"])
 	}
