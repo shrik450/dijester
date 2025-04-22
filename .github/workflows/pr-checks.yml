@@ -15,9 +15,6 @@ jobs:
           go-version-file: go.mod
           cache: true
 
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v7
-
       - name: Output paths to cache for deps
         run: |
           echo "GO_CACHE_PATH=$(go env GOCACHE)" >> $GITHUB_ENV
@@ -29,7 +26,10 @@ jobs:
           path: |
             ${{ env.GO_CACHE_PATH }}
             ${{ env.GO_MODCACHE_PATH }}
-          key: ${{ runner.os }}-gocache-${{ hashFiles(go.mod) }}
+          key: ${{ runner.os }}-gocache-${{ hashFiles('go.mod') }}
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
 
       - name: Build
         run: make build
