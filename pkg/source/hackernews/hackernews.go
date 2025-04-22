@@ -17,10 +17,12 @@ const (
 	itemURLFormat = apiBaseURL + "/item/%d.json"
 )
 
+// APIFetcher defines the interface for fetching from the API
 type APIFetcher interface {
 	FetchURLAsString(ctx context.Context, url string) (string, error)
 }
 
+// Source implements a Hacker News source.
 type Source struct {
 	name        string
 	maxArticles int
@@ -31,8 +33,10 @@ type Source struct {
 	procOptions *processor.Options
 }
 
+// ensure Source implements the source.Source interface
 var _ source.Source = (*Source)(nil)
 
+// New creates a new Hacker News source.
 func New(fetcher APIFetcher) *Source {
 	return &Source{
 		name:        "hackernews",
@@ -45,10 +49,12 @@ func New(fetcher APIFetcher) *Source {
 	}
 }
 
+// Name returns the source name.
 func (s *Source) Name() string {
 	return s.name
 }
 
+// Configure sets up the source with the provided configuration.
 func (s *Source) Configure(config map[string]interface{}) error {
 	if name, ok := config["name"].(string); ok && name != "" {
 		s.name = name
@@ -74,6 +80,7 @@ func (s *Source) Configure(config map[string]interface{}) error {
 	return nil
 }
 
+// HNItem represents a Hacker News API item.
 type HNItem struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
@@ -89,6 +96,7 @@ type HNItem struct {
 	Descendants int    `json:"descendants"`
 }
 
+// Fetch retrieves articles from Hacker News.
 func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 	content, err := s.fetcher.FetchURLAsString(ctx, topStoriesURL)
 	if err != nil {

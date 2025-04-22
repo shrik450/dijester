@@ -11,6 +11,7 @@ import (
 	"github.com/shrik450/dijester/pkg/fetcher"
 )
 
+// MockHTTPClient implements the HTTPClient interface for testing
 type MockHTTPClient struct {
 	DoFunc func(req *http.Request) (*http.Response, error)
 }
@@ -19,11 +20,13 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	return m.DoFunc(req)
 }
 
+// MockFetcher extends HTTPFetcher for testing
 type MockFetcher struct {
 	*fetcher.HTTPFetcher
 	MockFetchURLAsString func(ctx context.Context, url string) (string, error)
 }
 
+// FetchURLAsString overrides the HTTPFetcher method
 func (m *MockFetcher) FetchURLAsString(ctx context.Context, url string) (string, error) {
 	return m.MockFetchURLAsString(ctx, url)
 }
