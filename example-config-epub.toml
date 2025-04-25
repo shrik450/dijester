@@ -2,8 +2,8 @@
 
 [digest]
 format = "epub"
-output_path = "./my_digest.epub"
-title = "My Daily News Digest"
+output_path = "hn-{{.DTLong}}.epub"
+title = "Hacker News Digest for {{.Date}}"
 
 [global]
 concurrent_fetches = 3
@@ -16,19 +16,12 @@ max_articles = 10
 type = "hackernews"
 
 [sources.hackernews.options]
-categories = ["front_page"]
-include_metadata = true
-min_score = 100
-
-[sources.nytimes]
-enabled = true
-max_articles = 5
-name = "New York Times"
-type = "rss"
-
-[sources.nytimes.options]
-include_summary = true
-url = "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"
+min_score = 10
+page = "past"
+show_dead = true
 
 [global_processors]
 processors = ["readability"]
+
+[formatting]
+include_metadata = true

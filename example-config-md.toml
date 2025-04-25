@@ -2,8 +2,8 @@
 
 [digest]
 format = "markdown"
-output_path = "./my_digest.md"
-title = "My Daily News Digest"
+output_path = "./digest-{{.Year}}-{{.MonthNum}}-{{.Day}}.md"
+title = "My Daily News Digest - {{.Date}}"
 
 [global]
 concurrent_fetches = 3
