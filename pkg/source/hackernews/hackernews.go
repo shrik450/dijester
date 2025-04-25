@@ -22,6 +22,8 @@ type Source struct {
 	name        string
 	maxArticles int
 	minScore    int
+	showDead    bool
+	showDeleted bool
 	categories  []string
 }
 
@@ -29,8 +31,8 @@ type Source struct {
 func New() *Source {
 	return &Source{
 		name:        "hackernews",
-		maxArticles: 10,
-		minScore:    100,
+		maxArticles: 30,
+		minScore:    10,
 		categories:  []string{"front_page"},
 	}
 }
@@ -52,6 +54,14 @@ func (s *Source) Configure(config map[string]any) error {
 
 	if score, ok := config["min_score"].(int); ok && score > 0 {
 		s.minScore = score
+	}
+
+	if showDead, ok := config["show_dead"].(bool); ok {
+		s.showDead = showDead
+	}
+
+	if showDeleted, ok := config["show_deleted"].(bool); ok {
+		s.showDeleted = showDeleted
 	}
 
 	if cats, ok := config["categories"].([]any); ok && len(cats) > 0 {
@@ -116,7 +126,11 @@ func (s *Source) Fetch(ctx context.Context, fetcher fetcher.Fetcher) ([]*models.
 			continue
 		}
 
-		if item.Deleted || item.Dead {
+		if !s.showDead && item.Dead {
+			continue
+		}
+
+		if !s.showDeleted && item.Deleted {
 			continue
 		}
 
