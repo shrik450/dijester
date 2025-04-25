@@ -31,7 +31,6 @@
   - [x] Extract and normalize article content
   - [x] Extract metadata (title, author, summary)
   - [x] Add content sanitization (remove unwanted tags)
-- [ ] Create HTML to plain text converter
 
 ## Step 5: Output Formats
 
@@ -39,7 +38,7 @@
 - [x] Implement Markdown formatter
   - [x] Basic digest formatting
   - [x] HTML to Markdown conversion
-- [ ] Create EPUB generator
+- [x] Create EPUB generator
 - [x] Add formatting options
 
 ## Step 6: Command Line Interface
@@ -79,4 +78,3 @@
 - [x] Add sample configuration files
 - [ ] Create user guide
 - [ ] Package for distribution
-

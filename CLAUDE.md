@@ -17,19 +17,23 @@ code in this repository.
 ## Code Quality Guidelines
 
 - Always run `make check` after each major change.
-- Comment sparingly and only when necessary. Comments should only be used to
-  document or clarify when the code itself is not self-explanatory.
-
-  To best follow this directive, you must:
-
-  1. Write a first pass off the code as you would normally do.
-  2. Strip all comments from it.
-  3. Go over the code again and add documentation comments, along with comments
-     ONLY where the code cannot be made self-explanatory.
-
-  If the code you generate after step 2 has ANY comments, it will be
-  automatically rejected.
-
+- Do not add ANY comments. Doc comments are allowed, but NO OTHER COMMENTS.
+- Your implementation should be as simple as possible. Do not over-engineer or
+  over-complicate the code for the future. However, if additional complexity is
+  required to make the code testable, it is acceptable. E.g. taking an interface
+  as a parameter instead of a concrete type with the intention to mock it in
+  tests.
+- Follow the following order for any new functionality:
+  1. Is there a standard library function that does this? If yes, use it. E.g.
+     instead of combining strings, use `tmpl` or `strings.Join`.
+  2. Is this functionality core to the working of this program, or simple
+     enough that it can be implemented in a single function *without*
+     compromising on edge cases or security? If yes, implement it yourself. E.g.
+     fetching a URL, structuring the output, etc.
+  3. Is there a high-quality, commonly used open-source library that does this?
+     If yes, use it.
+  4. If none of the above options are available, implement it yourself in a new
+     package.
 - Write unit, integration, and end-to-end tests for new features and bug fixes.
   Tests should be meaningful and cover a variety of scenarios. Prefer testing
   at higher complexity levels. Do not write tests that test getters, setters,

@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
+	"text/template"
 	"time"
 
 	"github.com/shrik450/dijester/pkg/config"
@@ -18,8 +21,11 @@ import (
 
 func main() {
 	configPath := flag.String("config", "", "Path to config file")
-	outputPath := flag.String("output", "", "Path to output file, overrides config")
-	format := flag.String("format", "", "Output format (markdown or epub), overrides config")
+	outputDir := flag.String(
+		"output-dir",
+		"",
+		"Path to output directory. If the config specifies a relative path, it will be relative to this directory.",
+	)
 	flag.Parse()
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -35,22 +41,22 @@ func main() {
 	}
 	log.Printf("Loaded configuration from %s", *configPath)
 
-	var outputFormat string
-	if *format != "" {
-		outputFormat = *format
-	} else {
-		outputFormat = cfg.Digest.Format
-	}
-
-	outputFormatter, err := formatter.New(outputFormat)
+	outputFormatter, err := formatter.New(cfg.Digest.Format)
 	if err != nil {
 		log.Fatalf("Error initializing formatter: %v", err)
 	}
 	fmtOpts := formatter.OptionsFromConfig(cfg.Formatting)
 
+	now := time.Now()
+	formattedTitle, err := executeTmpl(cfg.Digest.Title, now)
+	if err != nil {
+		log.Printf("Error formatting title: %v, using original", err)
+		formattedTitle = cfg.Digest.Title
+	}
+
 	digest := &models.Digest{
-		Title:       cfg.Digest.Title,
-		GeneratedAt: time.Now(),
+		Title:       formattedTitle,
+		GeneratedAt: now,
 		Articles:    make([]*models.Article, 0),
 	}
 
@@ -121,14 +127,20 @@ func main() {
 
 	var finalOutputPath string
 
-	if *outputPath != "" {
-		finalOutputPath = *outputPath
-	} else {
+	formattedPath, err := executeTmpl(cfg.Digest.OutputPath, now)
+	if err != nil {
+		log.Printf("Error formatting output path: %v, using original", err)
 		finalOutputPath = cfg.Digest.OutputPath
+	} else {
+		finalOutputPath = formattedPath
 	}
 
-	outputDir := filepath.Dir(finalOutputPath)
-	if err := os.MkdirAll(outputDir, 0o755); err != nil {
+	if !filepath.IsAbs(finalOutputPath) && *outputDir != "" {
+		finalOutputPath = filepath.Join(*outputDir, finalOutputPath)
+	}
+
+	oDir := filepath.Dir(finalOutputPath)
+	if err := os.MkdirAll(oDir, 0o755); err != nil {
 		log.Fatalf("Error creating output directory: %v", err)
 	}
 
@@ -144,4 +156,46 @@ func main() {
 	}
 
 	log.Println("Dijester completed successfully")
+}
+
+type templateData struct {
+	Now      time.Time
+	Year     int
+	Month    string
+	MonthNum int
+	Day      int
+	Date     string
+	Time     string
+	TStamp   string
+	DTLong   string
+}
+
+func executeTmpl(text string, t time.Time) (string, error) {
+	if !strings.Contains(text, "{{") {
+		return text, nil
+	}
+
+	data := templateData{
+		Now:      t,
+		Year:     t.Year(),
+		Month:    t.Month().String(),
+		MonthNum: int(t.Month()),
+		Day:      t.Day(),
+		Date:     t.Format(time.DateOnly),
+		Time:     t.Format(time.TimeOnly),
+		TStamp:   t.Format(time.RFC3339),
+		DTLong:   t.Format(time.RubyDate),
+	}
+
+	tmpl, err := template.New("template").Parse(text)
+	if err != nil {
+		return "", fmt.Errorf("parsing template: %w", err)
+	}
+
+	var result strings.Builder
+	if err := tmpl.Execute(&result, data); err != nil {
+		return "", fmt.Errorf("executing template: %w", err)
+	}
+
+	return result.String(), nil
 }
