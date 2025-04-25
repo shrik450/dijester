@@ -1,0 +1,51 @@
+name: Publish Release with Binaries
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build and Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.x"
+          cache: true
+
+      - name: Build all platform binaries
+        run: |
+          TARGETS=(
+            "linux/amd64"
+            "linux/arm64"
+            "windows/amd64"
+            "darwin/amd64"
+            "darwin/arm64"
+          )
+
+          mkdir -p bin
+
+          for target in "${TARGETS[@]}"; do
+            IFS="/" read -r OS ARCH <<< "$target"
+
+            echo "Building for GOOS=$OS GOARCH=$ARCH"
+
+            if [ "$OS" = "windows" ]; then
+              BINARY_NAME="dijester-${{ github.ref_name }}.exe"
+            else
+              BINARY_NAME="dijester-${{ github.ref_name }}-$OS-$ARCH"
+            fi
+
+            GOOS=$OS GOARCH=$ARCH go build -o "bin/$BINARY_NAME" cmd/dijester/main.go
+          done
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bin/dijester-*
