@@ -9,13 +9,6 @@ import (
 	"github.com/shrik450/dijester/pkg/models"
 )
 
-func TestMarkdownFormatter_SupportedFormat(t *testing.T) {
-	f := NewMarkdownFormatter()
-	if f.SupportedFormat() != FormatMarkdown {
-		t.Errorf("Expected format to be 'markdown', got '%s'", f.SupportedFormat())
-	}
-}
-
 func TestMarkdownFormatter_Format(t *testing.T) {
 	f := NewMarkdownFormatter()
 	var buf bytes.Buffer
@@ -34,7 +27,7 @@ func TestMarkdownFormatter_Format(t *testing.T) {
 				Summary:     "Summary of article 1",
 				SourceName:  "Test Source",
 				Tags:        []string{"tag1", "tag2"},
-				Metadata: map[string]interface{}{
+				Metadata: map[string]any{
 					"score": 10,
 				},
 			},

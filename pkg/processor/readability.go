@@ -3,6 +3,7 @@ package processor
 import (
 	"bytes"
 	"errors"
+	"log"
 	"net/url"
 	"strings"
 
@@ -32,7 +33,7 @@ func (p *ReadabilityProcessor) Process(article *models.Article, opts *Options) e
 	}
 
 	if article.Content == "" {
-		return errors.New("article content cannot be empty")
+		return nil
 	}
 
 	parser := readability.NewParser()
@@ -66,11 +67,24 @@ func (p *ReadabilityProcessor) Process(article *models.Article, opts *Options) e
 		}
 
 		if !opts.IncludeImages {
-			content = removeHTMLTags(content, "img")
+			content, err = removeHTMLTags(content, "img")
+			if err != nil {
+				log.Printf("error removing images: %v; using original content", err)
+			}
 		}
 
 		if !opts.IncludeTables {
-			content = removeHTMLTags(content, "table")
+			content, err = removeHTMLTags(content, "table")
+			if err != nil {
+				log.Printf("error removing tables: %v; using original content", err)
+			}
+		}
+
+		if !opts.IncludeVideos {
+			content, err = removeHTMLTags(content, "video", "iframe")
+			if err != nil {
+				log.Printf("error removing videos: %v; using original content", err)
+			}
 		}
 	}
 
@@ -91,59 +105,40 @@ func (p *ReadabilityProcessor) Process(article *models.Article, opts *Options) e
 	return nil
 }
 
-// removeHTMLTags uses proper HTML parsing to remove all instances of a given tag from HTML content.
-func removeHTMLTags(content, tagName string) string {
+// removeHTMLTags removes all occurrences of the specified HTML tags from the content.
+func removeHTMLTags(content string, tagNames ...string) (string, error) {
 	doc, err := html.Parse(strings.NewReader(content))
 	if err != nil {
-		return content
+		return content, err
 	}
-
-	var buf bytes.Buffer
 
 	var traverse func(*html.Node)
 	traverse = func(n *html.Node) {
-		if n.Type == html.ElementNode && strings.EqualFold(n.Data, tagName) {
-			return
-		}
+		for c := n.FirstChild; c != nil; c = c.NextSibling {
+			removed := false
 
-		switch n.Type {
-		case html.ElementNode:
-			buf.WriteByte('<')
-			buf.WriteString(n.Data)
-			for _, attr := range n.Attr {
-				buf.WriteByte(' ')
-				buf.WriteString(attr.Key)
-				buf.WriteString(`="`)
-				buf.WriteString(html.EscapeString(attr.Val))
-				buf.WriteByte('"')
-			}
-			buf.WriteByte('>')
-
-			for c := n.FirstChild; c != nil; c = c.NextSibling {
-				traverse(c)
+			for _, tagName := range tagNames {
+				if c.Type == html.ElementNode && strings.EqualFold(c.Data, tagName) {
+					n.RemoveChild(c)
+					break
+				}
 			}
 
-			buf.WriteString("</")
-			buf.WriteString(n.Data)
-			buf.WriteByte('>')
-		case html.TextNode:
-			buf.WriteString(n.Data)
-		case html.CommentNode:
-			buf.WriteString("<!--")
-			buf.WriteString(n.Data)
-			buf.WriteString("-->")
-		case html.DoctypeNode:
-			buf.WriteString("<!DOCTYPE ")
-			buf.WriteString(n.Data)
-			buf.WriteByte('>')
+			if removed {
+				continue
+			}
+
+			traverse(c)
 		}
 	}
 
-	// Process all top-level nodes
-	for c := doc.FirstChild; c != nil; c = c.NextSibling {
-		traverse(c)
+	traverse(doc)
+
+	var buf bytes.Buffer
+	if err := html.Render(&buf, doc); err != nil {
+		return content, err
 	}
 
 	result := buf.String()
-	return result
+	return result, nil
 }

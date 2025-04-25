@@ -7,39 +7,13 @@ import (
 	"github.com/shrik450/dijester/pkg/models"
 )
 
-func TestReadabilityProcessor_Name(t *testing.T) {
-	p := NewReadabilityProcessor()
-	if p.Name() != "readability" {
-		t.Errorf("Expected name to be 'readability', got '%s'", p.Name())
-	}
-}
-
-func TestReadabilityProcessor_Process_NilArticle(t *testing.T) {
-	p := NewReadabilityProcessor()
-	err := p.Process(nil, DefaultOptions())
-	if err == nil {
-		t.Error("Expected error when processing nil article, got nil")
-	}
-}
-
-func TestReadabilityProcessor_Process_EmptyContent(t *testing.T) {
-	p := NewReadabilityProcessor()
-	article := &models.Article{
-		URL: "https://example.com",
-	}
-	err := p.Process(article, DefaultOptions())
-	if err == nil {
-		t.Error("Expected error when processing article with empty content, got nil")
-	}
-}
-
 func TestReadabilityProcessor_Process_SimpleHTML(t *testing.T) {
 	p := NewReadabilityProcessor()
 	article := &models.Article{
 		URL:     "https://example.com",
 		Content: `<html><head><title>Page Title</title></head><body><article><h1>Test Article</h1><p>This is a test paragraph</p></article><div class="noise">Noise content</div></body></html>`,
 	}
-	err := p.Process(article, DefaultOptions())
+	err := p.Process(article, &defaultOptions)
 	if err != nil {
 		t.Fatalf("Failed to process article: %v", err)
 	}
@@ -79,7 +53,7 @@ func TestReadabilityProcessor_Process_WithOptions(t *testing.T) {
 		opts := DefaultOptions()
 		opts.IncludeImages = false
 
-		err := p.Process(article, opts)
+		err := p.Process(article, &opts)
 		if err != nil {
 			t.Fatalf("Failed to process article: %v", err)
 		}
@@ -98,7 +72,7 @@ func TestReadabilityProcessor_Process_WithOptions(t *testing.T) {
 		opts := DefaultOptions()
 		opts.IncludeTables = false
 
-		err := p.Process(article, opts)
+		err := p.Process(article, &opts)
 		if err != nil {
 			t.Fatalf("Failed to process article: %v", err)
 		}
@@ -117,7 +91,7 @@ func TestReadabilityProcessor_Process_WithOptions(t *testing.T) {
 		opts := DefaultOptions()
 		opts.MinContentLength = 100
 
-		err := p.Process(article, opts)
+		err := p.Process(article, &opts)
 		if err != ErrContentProcessingFailed {
 			t.Errorf(
 				"Expected ErrContentProcessingFailed for content shorter than minimum, got %v",
@@ -135,7 +109,7 @@ func TestReadabilityProcessor_Process_WithOptions(t *testing.T) {
 		opts := DefaultOptions()
 		opts.MaxContentLength = 20
 
-		err := p.Process(article, opts)
+		err := p.Process(article, &opts)
 		if err != nil {
 			t.Fatalf("Failed to process article: %v", err)
 		}
@@ -169,7 +143,7 @@ func TestReadabilityProcessor_Process_ExtractsMetadata(t *testing.T) {
 		Content: htmlContent,
 	}
 
-	err := p.Process(article, DefaultOptions())
+	err := p.Process(article, &defaultOptions)
 	if err != nil {
 		t.Fatalf("Failed to process article: %v", err)
 	}

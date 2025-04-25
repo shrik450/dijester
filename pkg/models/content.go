@@ -31,7 +31,7 @@ type Article struct {
 	Tags []string
 
 	// Metadata contains any additional source-specific metadata
-	Metadata map[string]interface{}
+	Metadata map[string]any
 }
 
 // Digest represents a collection of articles ready for formatting.

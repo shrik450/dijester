@@ -22,3 +22,5 @@ lint:
 
 clean:
 	rm -rf bin/
+
+check: fmt lint test build e2e-test

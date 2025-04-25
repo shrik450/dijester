@@ -15,7 +15,7 @@ func TestReadabilityProcessor_RealWorldHTML(t *testing.T) {
 		Content: tests.SampleArticleHTML,
 	}
 
-	err := p.Process(article, DefaultOptions())
+	err := p.Process(article, &defaultOptions)
 	if err != nil {
 		t.Fatalf("Failed to process article: %v", err)
 	}
@@ -80,7 +80,7 @@ func TestReadabilityProcessor_RealWorldHTML(t *testing.T) {
 		opts.IncludeImages = false
 		opts.IncludeTables = false
 
-		err := p.Process(article, opts)
+		err := p.Process(article, &opts)
 		if err != nil {
 			t.Fatalf("Failed to process article: %v", err)
 		}

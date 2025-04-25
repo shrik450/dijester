@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"time"
 
+	"github.com/shrik450/dijester/pkg/fetcher"
 	"github.com/shrik450/dijester/pkg/models"
-	"github.com/shrik450/dijester/pkg/processor"
-	"github.com/shrik450/dijester/pkg/source"
 )
 
 const (
@@ -17,45 +17,31 @@ const (
 	itemURLFormat = apiBaseURL + "/item/%d.json"
 )
 
-// APIFetcher defines the interface for fetching from the API
-type APIFetcher interface {
-	FetchURLAsString(ctx context.Context, url string) (string, error)
-}
-
-// Source implements a Hacker News source.
+// Source implements a Hacker News source
 type Source struct {
 	name        string
 	maxArticles int
 	minScore    int
 	categories  []string
-	fetcher     APIFetcher
-	processor   processor.Processor
-	procOptions *processor.Options
 }
 
-// ensure Source implements the source.Source interface
-var _ source.Source = (*Source)(nil)
-
-// New creates a new Hacker News source.
-func New(fetcher APIFetcher) *Source {
+// New creates a new Hacker News source with default settings
+func New() *Source {
 	return &Source{
 		name:        "hackernews",
 		maxArticles: 10,
 		minScore:    100,
 		categories:  []string{"front_page"},
-		fetcher:     fetcher,
-		processor:   processor.NewReadabilityProcessor(),
-		procOptions: processor.DefaultOptions(),
 	}
 }
 
-// Name returns the source name.
+// Name returns the source name
 func (s *Source) Name() string {
 	return s.name
 }
 
-// Configure sets up the source with the provided configuration.
-func (s *Source) Configure(config map[string]interface{}) error {
+// Configure sets up the source with the provided configuration
+func (s *Source) Configure(config map[string]any) error {
 	if name, ok := config["name"].(string); ok && name != "" {
 		s.name = name
 	}
@@ -68,7 +54,7 @@ func (s *Source) Configure(config map[string]interface{}) error {
 		s.minScore = score
 	}
 
-	if cats, ok := config["categories"].([]interface{}); ok && len(cats) > 0 {
+	if cats, ok := config["categories"].([]any); ok && len(cats) > 0 {
 		s.categories = make([]string, 0, len(cats))
 		for _, cat := range cats {
 			if catStr, ok := cat.(string); ok {
@@ -80,7 +66,7 @@ func (s *Source) Configure(config map[string]interface{}) error {
 	return nil
 }
 
-// HNItem represents a Hacker News API item.
+// HNItem represents a Hacker News API item
 type HNItem struct {
 	ID          int    `json:"id"`
 	Title       string `json:"title"`
@@ -96,9 +82,9 @@ type HNItem struct {
 	Descendants int    `json:"descendants"`
 }
 
-// Fetch retrieves articles from Hacker News.
-func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
-	content, err := s.fetcher.FetchURLAsString(ctx, topStoriesURL)
+// Fetch retrieves articles from Hacker News
+func (s *Source) Fetch(ctx context.Context, fetcher fetcher.Fetcher) ([]*models.Article, error) {
+	content, err := fetcher.FetchURLAsString(ctx, topStoriesURL)
 	if err != nil {
 		return nil, fmt.Errorf("fetching top stories: %w", err)
 	}
@@ -119,13 +105,14 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 		}
 
 		itemURL := fmt.Sprintf(itemURLFormat, id)
-		content, err := s.fetcher.FetchURLAsString(ctx, itemURL)
+		content, err := fetcher.FetchURLAsString(ctx, itemURL)
 		if err != nil {
 			continue
 		}
 
 		var item HNItem
 		if err := json.Unmarshal([]byte(content), &item); err != nil {
+			log.Println("Error unmarshalling HN item:", err)
 			continue
 		}
 
@@ -137,10 +124,6 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 			continue
 		}
 
-		if item.Type != "story" {
-			continue
-		}
-
 		article := &models.Article{
 			Title:       item.Title,
 			Author:      item.By,
@@ -148,7 +131,7 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 			URL:         item.URL,
 			Content:     item.Text,
 			SourceName:  s.name,
-			Metadata: map[string]interface{}{
+			Metadata: map[string]any{
 				"score":        item.Score,
 				"comments":     item.Descendants,
 				"id":           item.ID,
@@ -157,16 +140,15 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 		}
 
 		if article.URL == "" {
+			article.Content = item.Text
 			article.URL = article.Metadata["comments_url"].(string)
 		} else {
-			articleContent, err := s.fetcher.FetchURLAsString(ctx, article.URL)
+			articleContent, err := fetcher.FetchURLAsString(ctx, article.URL)
 			if err == nil {
-				article.Content = articleContent
-
-				if err := s.processor.Process(article, s.procOptions); err != nil {
-					if article.Content == "" && item.Text != "" {
-						article.Content = item.Text
-					}
+				if articleContent != "" {
+					article.Content = articleContent
+				} else if item.Text != "" {
+					article.Content = item.Text
 				}
 			} else if item.Text != "" {
 				article.Content = item.Text
