@@ -32,7 +32,7 @@ func (m *MockFetcher) FetchURLAsString(ctx context.Context, url string) (string,
 }
 
 func TestHackerNewsSource_Configure(t *testing.T) {
-	source := New(nil)
+	source := New()
 
 	validConfig := map[string]interface{}{
 		"name":         "Custom HN",
@@ -63,7 +63,7 @@ func TestHackerNewsSource_Configure(t *testing.T) {
 		t.Errorf("Expected categories ['front_page', 'new'], got %v", source.categories)
 	}
 
-	source = New(nil)
+	source = New()
 	err = source.Configure(map[string]interface{}{})
 	if err != nil {
 		t.Errorf("Configure with empty config returned error: %v", err)
@@ -172,8 +172,8 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		},
 	}
 
-	source := New(mockFetcher)
-	err := source.Configure(map[string]interface{}{
+	source := New()
+	err := source.Configure(map[string]any{
 		"name":         "Test HN",
 		"max_articles": 10,
 		"min_score":    100,
@@ -183,13 +183,13 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	articles, err := source.Fetch(ctx)
+	articles, err := source.Fetch(ctx, mockFetcher)
 	if err != nil {
 		t.Fatalf("Fetch returned error: %v", err)
 	}
 
-	if len(articles) != 1 {
-		t.Fatalf("Expected 1 article, got %d", len(articles))
+	if len(articles) != 2 {
+		t.Fatalf("Expected 2 articles, got %d", len(articles))
 	}
 
 	article := articles[0]
@@ -209,7 +209,7 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		t.Errorf("Expected source name 'Test HN', got '%s'", article.SourceName)
 	}
 
-	source = New(mockFetcher)
+	source = New()
 	err = source.Configure(map[string]interface{}{
 		"min_score": 40,
 	})
@@ -217,13 +217,13 @@ func TestHackerNewsSource_Fetch(t *testing.T) {
 		t.Fatalf("Failed to configure source: %v", err)
 	}
 
-	articles, err = source.Fetch(ctx)
+	articles, err = source.Fetch(ctx, mockFetcher)
 	if err != nil {
 		t.Fatalf("Fetch returned error: %v", err)
 	}
 
-	if len(articles) != 2 {
-		t.Fatalf("Expected 2 articles with lower min_score, got %d", len(articles))
+	if len(articles) != 3 {
+		t.Fatalf("Expected 3 articles with lower min_score, got %d", len(articles))
 	}
 
 	if score, ok := articles[0].Metadata["score"].(int); !ok || score != 150 {

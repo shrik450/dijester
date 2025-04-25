@@ -17,11 +17,6 @@ func NewMarkdownFormatter() *MarkdownFormatter {
 	return &MarkdownFormatter{}
 }
 
-// SupportedFormat returns the format this formatter supports.
-func (f *MarkdownFormatter) SupportedFormat() Format {
-	return FormatMarkdown
-}
-
 // Format writes the formatted digest to the provided writer.
 func (f *MarkdownFormatter) Format(w io.Writer, digest *models.Digest, opts *Options) error {
 	if digest == nil {

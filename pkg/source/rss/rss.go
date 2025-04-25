@@ -7,33 +7,23 @@ import (
 
 	"github.com/mmcdole/gofeed"
 
+	"github.com/shrik450/dijester/pkg/fetcher"
 	"github.com/shrik450/dijester/pkg/models"
-	"github.com/shrik450/dijester/pkg/source"
 )
-
-// FeedFetcher defines the interface for fetching feeds
-type FeedFetcher interface {
-	FetchURLAsString(ctx context.Context, url string) (string, error)
-}
 
 // Source implements an RSS/Atom feed source.
 type Source struct {
 	name        string
 	url         string
 	maxArticles int
-	fetcher     FeedFetcher
 	parser      *gofeed.Parser
 }
 
-// ensure Source implements the source.Source interface
-var _ source.Source = (*Source)(nil)
-
-// New creates a new RSS source.
-func New(fetcher FeedFetcher) *Source {
+// New creates a new RSS source with default settings.
+func New() *Source {
 	return &Source{
 		name:        "rss",
 		maxArticles: 10,
-		fetcher:     fetcher,
 		parser:      gofeed.NewParser(),
 	}
 }
@@ -64,8 +54,8 @@ func (s *Source) Configure(config map[string]interface{}) error {
 }
 
 // Fetch retrieves articles from the RSS feed.
-func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
-	content, err := s.fetcher.FetchURLAsString(ctx, s.url)
+func (s *Source) Fetch(ctx context.Context, fetcher fetcher.Fetcher) ([]*models.Article, error) {
+	content, err := fetcher.FetchURLAsString(ctx, s.url)
 	if err != nil {
 		return nil, fmt.Errorf("fetching RSS feed: %w", err)
 	}
@@ -82,7 +72,6 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 			continue
 		}
 
-		// Use published date if available, otherwise use updated date
 		var publishedAt time.Time
 		if item.PublishedParsed != nil {
 			publishedAt = *item.PublishedParsed
@@ -114,7 +103,7 @@ func (s *Source) Fetch(ctx context.Context) ([]*models.Article, error) {
 			Summary:     summary,
 			SourceName:  s.name,
 			Tags:        item.Categories,
-			Metadata:    make(map[string]interface{}),
+			Metadata:    make(map[string]any),
 		}
 
 		articles = append(articles, article)

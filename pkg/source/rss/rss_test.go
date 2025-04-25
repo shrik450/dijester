@@ -29,7 +29,7 @@ func (m *MockFetcher) FetchURLAsString(ctx context.Context, url string) (string,
 }
 
 func TestRSSSource_Configure(t *testing.T) {
-	source := New(nil)
+	source := New()
 
 	// Test valid configuration
 	validConfig := map[string]interface{}{
@@ -70,7 +70,7 @@ func TestRSSSource_Configure(t *testing.T) {
 		"url": "https://example.com/feed.xml",
 	}
 
-	source = New(nil)
+	source = New()
 	err = source.Configure(minimalConfig)
 	if err != nil {
 		t.Errorf("Configure with minimal config returned error: %v", err)
@@ -139,7 +139,7 @@ func TestRSSSource_Fetch(t *testing.T) {
 	}
 
 	// Create and configure our source
-	source := New(mockFetcher)
+	source := New()
 	err := source.Configure(map[string]interface{}{
 		"url":          "https://example.com/feed.xml",
 		"name":         "Test Feed",
@@ -151,7 +151,7 @@ func TestRSSSource_Fetch(t *testing.T) {
 
 	// Fetch articles
 	ctx := context.Background()
-	articles, err := source.Fetch(ctx)
+	articles, err := source.Fetch(ctx, mockFetcher)
 	if err != nil {
 		t.Fatalf("Fetch returned error: %v", err)
 	}
@@ -209,7 +209,7 @@ func TestRSSSource_Fetch(t *testing.T) {
 	}
 
 	// Test max articles limit
-	source = New(mockFetcher)
+	source = New()
 	err = source.Configure(map[string]interface{}{
 		"url":          "https://example.com/feed.xml",
 		"max_articles": 1,
@@ -218,7 +218,7 @@ func TestRSSSource_Fetch(t *testing.T) {
 		t.Fatalf("Failed to configure source: %v", err)
 	}
 
-	articles, err = source.Fetch(ctx)
+	articles, err = source.Fetch(ctx, mockFetcher)
 	if err != nil {
 		t.Fatalf("Fetch returned error: %v", err)
 	}

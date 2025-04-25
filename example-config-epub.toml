@@ -17,6 +17,7 @@ type = "hackernews"
 
 [sources.hackernews.options]
 categories = ["front_page"]
+include_metadata = true
 min_score = 100
 
 [sources.nytimes]
@@ -28,3 +29,6 @@ type = "rss"
 [sources.nytimes.options]
 include_summary = true
 url = "https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"
+
+[global_processors]
+processors = ["readability"]
