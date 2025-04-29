@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/shrik450/dijester/pkg/fetcher"
 	"github.com/shrik450/dijester/pkg/models"
 )
 
@@ -15,12 +16,13 @@ type Options struct {
 	// IncludeMetadata toggles whether metadata is included
 	IncludeMetadata bool
 
-	// CustomTemplate is an optional custom template to use for formatting
-	CustomTemplate string
-
 	// StoreImages toggles whether to store images locally. Doesn't apply to
 	// Markdown.
 	StoreImages bool
+
+	// Fetcher is a fetcher used to fetch images and other resources if
+	// required.
+	Fetcher fetcher.Fetcher
 
 	// AdditionalOptions contains format-specific options
 	AdditionalOptions map[string]any
@@ -30,7 +32,7 @@ func DefaultOptions() Options {
 	return Options{
 		IncludeSummary:    true,
 		IncludeMetadata:   false,
-		StoreImages:       true,
+		StoreImages:       false,
 		AdditionalOptions: make(map[string]any),
 	}
 }
@@ -66,7 +68,7 @@ func New(name string) (Formatter, error) {
 }
 
 // OptionsFromConfig converts a configuration map to Options.
-func OptionsFromConfig(config map[string]any) Options {
+func OptionsFromConfig(config map[string]any, fetcher fetcher.Fetcher) Options {
 	opts := DefaultOptions()
 
 	if includeSummary, ok := config["include_summary"].(bool); ok {
@@ -78,9 +80,8 @@ func OptionsFromConfig(config map[string]any) Options {
 	if storeImages, ok := config["store_images"].(bool); ok {
 		opts.StoreImages = storeImages
 	}
-	if customTemplate, ok := config["custom_template"].(string); ok {
-		opts.CustomTemplate = customTemplate
-	}
+
+	opts.Fetcher = fetcher
 
 	return opts
 }

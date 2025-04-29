@@ -41,12 +41,6 @@ func main() {
 	}
 	log.Printf("Loaded configuration from %s", *configPath)
 
-	outputFormatter, err := formatter.New(cfg.Digest.Format)
-	if err != nil {
-		log.Fatalf("Error initializing formatter: %v", err)
-	}
-	fmtOpts := formatter.OptionsFromConfig(cfg.Formatting)
-
 	now := time.Now()
 	formattedTitle, err := executeTmpl(cfg.Digest.Title, now)
 	if err != nil {
@@ -65,6 +59,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error initializing global processors: %v", err)
 	}
+
+	outputFormatter, err := formatter.New(cfg.Digest.Format)
+	if err != nil {
+		log.Fatalf("Error initializing formatter: %v", err)
+	}
+	fmtOpts := formatter.OptionsFromConfig(cfg.Formatting, globalFetcher)
 
 	ctx := context.Background()
 

@@ -1,6 +1,7 @@
 package formatter
 
 import (
+	"context"
 	"fmt"
 	"html/template"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"golang.org/x/net/html"
 
 	"github.com/shrik450/dijester/pkg/constants"
+	"github.com/shrik450/dijester/pkg/fetcher"
 	"github.com/shrik450/dijester/pkg/models"
 )
 
@@ -35,6 +37,11 @@ func (f *EPUBFormatter) Format(w io.Writer, digest *models.Digest, opts *Options
 	if opts == nil {
 		opt := DefaultOptions()
 		opts = &opt
+	}
+
+	fetcher := opts.Fetcher
+	if fetcher == nil && opts.StoreImages {
+		return fmt.Errorf("store_images is true but no fetcher was provided")
 	}
 
 	var tempImageFiles []string
@@ -63,8 +70,14 @@ func (f *EPUBFormatter) Format(w io.Writer, digest *models.Digest, opts *Options
 		return fmt.Errorf("error adding table of contents: %w", err)
 	}
 
+	tempDir, err := os.MkdirTemp("", "dijester-epub-")
+	if err != nil {
+		return fmt.Errorf("error creating temp directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
 	for i, article := range digest.Articles {
-		sectionHTML := f.generateArticleHTML(e, article, opts)
+		sectionHTML := f.generateArticleHTML(e, article, opts, tempDir, fetcher)
 
 		_, err = e.AddSection(sectionHTML, article.Title, fmt.Sprintf("article-%d", i+1), "")
 		if err != nil {
@@ -72,34 +85,7 @@ func (f *EPUBFormatter) Format(w io.Writer, digest *models.Digest, opts *Options
 		}
 	}
 
-	if opts.StoreImages {
-		// This uses its own internal HTTP client, which ignores our settings.
-		// TODO: Use the same HTTP client as the rest of the app.
-		e.EmbedImages()
-	}
-
-	// Create a temporary file to store the EPUB
-	tempFile, err := os.CreateTemp("", "digest-*.epub")
-	if err != nil {
-		return fmt.Errorf("error creating temporary file: %w", err)
-	}
-	tempFilePath := tempFile.Name()
-	tempFile.Close()
-	defer os.Remove(tempFilePath)
-
-	// Write the EPUB to the temporary file
-	err = e.Write(tempFilePath)
-	if err != nil {
-		return fmt.Errorf("error writing EPUB to temp file: %w", err)
-	}
-
-	// Read the file back into memory
-	b, err := os.ReadFile(tempFilePath)
-	if err != nil {
-		return fmt.Errorf("error reading EPUB file: %w", err)
-	}
-
-	_, err = w.Write(b)
+	_, err = e.WriteTo(w)
 	if err != nil {
 		return fmt.Errorf("error writing EPUB to writer: %w", err)
 	}
@@ -140,51 +126,44 @@ func (f *EPUBFormatter) generateTOC(digest *models.Digest) string {
 }
 
 var articleTemplate = `
-<html>
-<head>
-	<title>{{.Title}}</title>
-</head>
-<body>
-	<h1>{{.Title}}</h1>
+<h1>{{.Title}}</h1>
 
-	<div style="background-color: #f5f5f5; border: 1px solid #e0e0e0; padding: 10px; margin-bottom: 20px; font-size: 0.9em; color: #555; border-radius: 4px;">
-		<div style="margin-bottom: 5px;">
-			{{if .Author}}<span style="margin-right: 15px;">By {{.Author}}</span>{{end}}
-			{{if .PublishedAt}}<span style="margin-right: 15px;">at {{.PublishedAt}}</span>{{end}}
-		</div>
-		<div>
-			<span style="margin-right: 15px;"><a href="{{.URL}}" style="color: #1a73e8; text-decoration: none;">Link</a></span>
-			{{if .Tags}}<span><strong>Tags:</strong> {{.Tags}}</span>{{end}}
-		</div>
+<div style="background-color: #f5f5f5; border: 1px solid #e0e0e0; padding: 10px; margin-bottom: 20px; font-size: 0.9em; color: #555; border-radius: 4px;">
+	<div style="margin-bottom: 5px;">
+		{{if .Author}}<span style="margin-right: 15px;">By {{.Author}}</span>{{end}}
+		{{if .PublishedAt}}<span style="margin-right: 15px;">at {{.PublishedAt}}</span>{{end}}
 	</div>
-
-	{{if .IncludeSummary}}
-		{{if .Summary}}
-			<div style="background-color: #f8f9fa; border-left: 4px solid #1a73e8; padding: 10px 15px; margin-bottom: 20px;">
-				<h2 style="margin-top: 0; font-size: 1.2em;">Summary</h2>
-				<p>{{.Summary}}</p>
-			</div>
-		{{end}}
-	{{end}}
-
-	<div class="article-content">
-		{{.Content}}
+	<div>
+		<span style="margin-right: 15px;"><a href="{{.URL}}" style="color: #1a73e8; text-decoration: none;">Link</a></span>
+		{{if .Tags}}<span><strong>Tags:</strong> {{.Tags}}</span>{{end}}
 	</div>
+</div>
 
-	{{if .IncludeMetadata}}
-		{{if .Metadata}}
-			<div style="margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
-				<h2>Metadata</h2>
-				<ul>
-					{{range $key, $value := .Metadata}}
-						<li><strong>{{$key}}:</strong> {{$value}}</li>
-					{{end}}
-				</ul>
-			</div>
-		{{end}}
+{{if .IncludeSummary}}
+	{{if .Summary}}
+		<div style="background-color: #f8f9fa; border-left: 4px solid #1a73e8; padding: 10px 15px; margin-bottom: 20px;">
+			<h2 style="margin-top: 0; font-size: 1.2em;">Summary</h2>
+			<p>{{.Summary}}</p>
+		</div>
 	{{end}}
-</body>
-</html>
+{{end}}
+
+<div class="article-content">
+	{{.Content}}
+</div>
+
+{{if .IncludeMetadata}}
+	{{if .Metadata}}
+		<div style="margin-top: 30px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
+			<h2>Metadata</h2>
+			<ul>
+				{{range $key, $value := .Metadata}}
+					<li><strong>{{$key}}:</strong> {{$value}}</li>
+				{{end}}
+			</ul>
+		</div>
+	{{end}}
+{{end}}
 `
 
 // generateArticleHTML creates the HTML for a single article.
@@ -192,11 +171,13 @@ func (f *EPUBFormatter) generateArticleHTML(
 	e *epub.Epub,
 	article *models.Article,
 	opts *Options,
+	tempDir string,
+	fetcher fetcher.Fetcher,
 ) string {
 	tmpl := template.Must(template.New("article").Parse(articleTemplate))
 
 	if opts.StoreImages {
-		embedImages(e, article)
+		embedImages(e, article, tempDir, fetcher)
 	}
 
 	var sb strings.Builder
@@ -217,7 +198,7 @@ func (f *EPUBFormatter) generateArticleHTML(
 	return sb.String()
 }
 
-func embedImages(e *epub.Epub, article *models.Article) {
+func embedImages(e *epub.Epub, article *models.Article, tempDir string, fetcher fetcher.Fetcher) {
 	node, err := html.Parse(strings.NewReader(article.Content))
 	if err != nil {
 		log.Printf("error parsing HTML: %s", err)
@@ -229,23 +210,56 @@ func embedImages(e *epub.Epub, article *models.Article) {
 		return
 	}
 
+	ctx := context.Background()
+
 	var traverse func(*html.Node)
 	traverse = func(n *html.Node) {
 		if n.Type == html.ElementNode && n.Data == "img" {
-			for _, attr := range n.Attr {
+			for i := range n.Attr {
+				attr := &n.Attr[i]
 				if attr.Key == "src" {
+					beforeURL := attr.Val
+					if strings.HasPrefix(beforeURL, "data:image/") {
+						continue
+					}
+
 					resolvedURL, err := resolveURL(articleUrl, attr.Val)
 					if err != nil {
 						log.Printf("error resolving URL: %s", err)
 						continue
 					}
 
-					if strings.HasPrefix(resolvedURL, "data:image/") {
+					tmpFile, err := os.CreateTemp(tempDir, "img-")
+					if err != nil {
+						log.Printf("error creating temp file: %s", err)
+						continue
+					}
+					defer tmpFile.Close()
+					// tmpFile shouldn't be deleted here, as the epub only
+					// "grabs" the file when it writes the full epub.
+
+					resp, err := fetcher.FetchURL(ctx, resolvedURL)
+					if err != nil {
+						log.Printf("error fetching image: %s", err)
 						continue
 					}
 
-					e.AddImage(resolvedURL, "")
-					attr.Val = resolvedURL
+					_, err = tmpFile.Write(resp)
+					if err != nil {
+						log.Printf("error writing image to temp file: %s", err)
+						continue
+					}
+
+					newURL, err := e.AddImage(tmpFile.Name(), "")
+					if err != nil {
+						log.Printf("error adding image to EPUB: %s", err)
+						continue
+					}
+
+					if newURL != "" {
+						attr.Val = newURL
+					}
+
 					break
 				}
 			}

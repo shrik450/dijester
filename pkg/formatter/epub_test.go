@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shrik450/dijester/pkg/fetcher"
 	"github.com/shrik450/dijester/pkg/models"
 )
 
@@ -134,6 +135,7 @@ func TestEPUBFormatter_StoreImages(t *testing.T) {
 		IncludeSummary:  true,
 		IncludeMetadata: false,
 		StoreImages:     true,
+		Fetcher:         fetcher.NewHTTPFetcher(),
 	}
 
 	err := formatter.Format(buf, digest, opts)
@@ -174,7 +176,7 @@ func TestEPUBFormatter_StoreImages(t *testing.T) {
 		t.Logf("- File: %s (size: %d bytes)", file.Name, file.UncompressedSize64)
 
 		// Track image files specifically
-		if strings.Contains(file.Name, "/images/") && strings.HasSuffix(file.Name, ".jpg") {
+		if strings.Contains(file.Name, "/images/") {
 			imageFiles = append(imageFiles, file.Name)
 			hasImage = true
 
