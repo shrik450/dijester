@@ -1,5 +1,10 @@
 # Dijester Changelog
 
+## v0.2.1 (2025-04-30)
+
+Fast follow release to fix the 1MB content limit affecting non-HTML content
+(like images) as well.
+
 ## v0.2.0 (2025-04-30)
 
 - Fix inconsistent image loading in the EPUB formatter.

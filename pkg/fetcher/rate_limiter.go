@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"context"
+	"io"
 	"net/url"
 	"sync"
 	"time"
@@ -89,4 +90,12 @@ func (f *LimitedFetcher) FetchURLAsString(ctx context.Context, url string) (stri
 	}
 
 	return f.Fetcher.FetchURLAsString(ctx, url)
+}
+
+func (f *LimitedFetcher) StreamURL(ctx context.Context, url string, writer io.Writer) error {
+	if err := f.limiter.Wait(ctx, url); err != nil {
+		return err
+	}
+
+	return f.Fetcher.StreamURL(ctx, url, writer)
 }

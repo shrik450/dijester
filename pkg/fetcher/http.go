@@ -46,10 +46,7 @@ func WithClient(client HTTPClient) HTTPFetcherOption {
 
 // NewHTTPFetcher creates a new HTTP fetcher with the given options.
 func NewHTTPFetcher(opts ...HTTPFetcherOption) *HTTPFetcher {
-	f := &HTTPFetcher{
-		userAgent: "Dijester/1.0",
-		timeout:   30 * time.Second,
-	}
+	f := &HTTPFetcher{}
 
 	for _, opt := range opts {
 		opt(f)
@@ -83,7 +80,7 @@ func (f *HTTPFetcher) FetchURL(ctx context.Context, url string) ([]byte, error) 
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024*1024)) // Limit to 1MB
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024)) // Limit to 1MB
 	if err != nil {
 		return nil, fmt.Errorf("reading response body: %w", err)
 	}
@@ -98,4 +95,31 @@ func (f *HTTPFetcher) FetchURLAsString(ctx context.Context, url string) (string,
 		return "", err
 	}
 	return string(body), nil
+}
+
+// StreamURL streams content from a URL to the provided writer.
+func (f *HTTPFetcher) StreamURL(ctx context.Context, url string, writer io.Writer) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
+	req.Header.Set("User-Agent", f.userAgent)
+
+	resp, err := f.client.Do(req)
+	if err != nil {
+		return fmt.Errorf("executing request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	_, err = io.Copy(writer, resp.Body)
+	if err != nil {
+		return fmt.Errorf("copying response body: %w", err)
+	}
+
+	return nil
 }

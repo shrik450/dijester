@@ -2,6 +2,7 @@ package fetcher
 
 import (
 	"context"
+	"io"
 	"time"
 
 	"github.com/shrik450/dijester/pkg/constants"
@@ -26,6 +27,8 @@ type Fetcher interface {
 	FetchURLAsString(ctx context.Context, url string) (string, error)
 	// FetchURL fetches the content of a URL as a byte slice.
 	FetchURL(ctx context.Context, url string) ([]byte, error)
+	// StreamURL streams the content of a URL to the provided writer.
+	StreamURL(ctx context.Context, url string, writer io.Writer) error
 }
 
 func FromConfig(cfg FetcherConfig) Fetcher {

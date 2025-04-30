@@ -44,13 +44,6 @@ func (f *EPUBFormatter) Format(w io.Writer, digest *models.Digest, opts *Options
 		return fmt.Errorf("store_images is true but no fetcher was provided")
 	}
 
-	var tempImageFiles []string
-	defer func() {
-		for _, path := range tempImageFiles {
-			os.Remove(path)
-		}
-	}()
-
 	e, err := epub.NewEpub(digest.Title)
 	if err != nil {
 		return fmt.Errorf("error creating epub: %w", err)
@@ -70,14 +63,14 @@ func (f *EPUBFormatter) Format(w io.Writer, digest *models.Digest, opts *Options
 		return fmt.Errorf("error adding table of contents: %w", err)
 	}
 
-	tempDir, err := os.MkdirTemp("", "dijester-epub-")
+	tmpDir, err := os.MkdirTemp("", "dijester-epub-")
 	if err != nil {
 		return fmt.Errorf("error creating temp directory: %w", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer os.RemoveAll(tmpDir)
 
 	for i, article := range digest.Articles {
-		sectionHTML := f.generateArticleHTML(e, article, opts, tempDir, fetcher)
+		sectionHTML := f.generateArticleHTML(e, article, opts, tmpDir, fetcher)
 
 		_, err = e.AddSection(sectionHTML, article.Title, fmt.Sprintf("article-%d", i+1), "")
 		if err != nil {
@@ -171,13 +164,13 @@ func (f *EPUBFormatter) generateArticleHTML(
 	e *epub.Epub,
 	article *models.Article,
 	opts *Options,
-	tempDir string,
+	tmpDir string,
 	fetcher fetcher.Fetcher,
 ) string {
 	tmpl := template.Must(template.New("article").Parse(articleTemplate))
 
 	if opts.StoreImages {
-		embedImages(e, article, tempDir, fetcher)
+		embedImages(e, article, tmpDir, fetcher)
 	}
 
 	var sb strings.Builder
@@ -198,7 +191,7 @@ func (f *EPUBFormatter) generateArticleHTML(
 	return sb.String()
 }
 
-func embedImages(e *epub.Epub, article *models.Article, tempDir string, fetcher fetcher.Fetcher) {
+func embedImages(e *epub.Epub, article *models.Article, tmpDir string, fetcher fetcher.Fetcher) {
 	node, err := html.Parse(strings.NewReader(article.Content))
 	if err != nil {
 		log.Printf("error parsing HTML: %s", err)
@@ -229,24 +222,20 @@ func embedImages(e *epub.Epub, article *models.Article, tempDir string, fetcher 
 						continue
 					}
 
-					tmpFile, err := os.CreateTemp(tempDir, "img-")
+					tmpFile, err := os.CreateTemp(tmpDir, "img-")
 					if err != nil {
 						log.Printf("error creating temp file: %s", err)
 						continue
 					}
 					defer tmpFile.Close()
 					// tmpFile shouldn't be deleted here, as the epub only
-					// "grabs" the file when it writes the full epub.
+					// "grabs" the file when it writes the full epub. It will
+					// be deleted when the entire `tmpDir` (managed by the
+					// calling function) is deleted.
 
-					resp, err := fetcher.FetchURL(ctx, resolvedURL)
+					err = fetcher.StreamURL(ctx, resolvedURL, tmpFile)
 					if err != nil {
 						log.Printf("error fetching image: %s", err)
-						continue
-					}
-
-					_, err = tmpFile.Write(resp)
-					if err != nil {
-						log.Printf("error writing image to temp file: %s", err)
 						continue
 					}
 
