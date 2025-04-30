@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/shrik450/dijester/pkg/config"
+	"github.com/shrik450/dijester/pkg/constants"
 	"github.com/shrik450/dijester/pkg/fetcher"
 	"github.com/shrik450/dijester/pkg/formatter"
 	"github.com/shrik450/dijester/pkg/models"
@@ -20,6 +21,7 @@ import (
 )
 
 func main() {
+	versionFlag := flag.Bool("version", false, "Print version and exit")
 	configPath := flag.String("config", "", "Path to config file")
 	outputDir := flag.String(
 		"output-dir",
@@ -27,6 +29,11 @@ func main() {
 		"Path to output directory. If the config specifies a relative path, it will be relative to this directory.",
 	)
 	flag.Parse()
+
+	if *versionFlag {
+		fmt.Printf("%s\n", constants.VERSION)
+		return
+	}
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	log.Println("Dijester starting up...")
