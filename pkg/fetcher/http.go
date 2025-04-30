@@ -83,7 +83,7 @@ func (f *HTTPFetcher) FetchURL(ctx context.Context, url string) ([]byte, error) 
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1024*1024*1024)) // Limit to 1MB
 	if err != nil {
 		return nil, fmt.Errorf("reading response body: %w", err)
 	}

@@ -92,11 +92,12 @@ include_content = true  # Whether to include the content from the RSS feed
 
 ## Content Processing
 
-The `global_processors` section configures how dijester processes raw content:
+The `global_processors` section configures how dijester processes all articles
+unless overridden for a source:
 
 ```toml
 [global_processors]
-processors = ["readability"]  # List of processors to apply
+processors = ["readability", "sanitizer"]  # List of processors to apply
 
 [global_processors.processor_configs.readability]
 min_content_length = 100  # Minimum content length to process
@@ -108,7 +109,11 @@ include_videos = true  # Whether to include videos
 
 ### Available Processors
 
-- `readability`: Extracts the main content from a webpage, removing navigation, ads, etc.
+- `readability`: Extracts the main content from a webpage, removing navigation,
+   ads, etc.
+- `sanitizer`: Cleans up HTML content to remove unwanted tags and attributes.
+   If you are outputting EPUB, you should always have this processor at the end
+   of the pipeline.
 
 ## Formatting Options
 
@@ -129,7 +134,7 @@ timeout = "60s"  # Overrides the global timeout
 rate_limit = 5.0  # Wait 5 seconds between requests
 
 [sources.custom_source.processor_config]
-processors = ["readability"]  # Different processor pipeline for this source
+processors = ["readability", "sanitizer"]  # Different processor pipeline for this source
 ```
 
 ## Complete Example

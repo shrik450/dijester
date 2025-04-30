@@ -65,6 +65,7 @@ type Processor interface {
 
 var availableProcessors = []string{
 	"readability",
+	"sanitizer",
 }
 
 // List returns a list of available processor names.
@@ -79,6 +80,8 @@ func New(name string) (Processor, error) {
 	switch name {
 	case "readability":
 		return NewReadabilityProcessor(), nil
+	case "sanitizer":
+		return NewSanitizerProcessor(), nil
 	}
 
 	return nil, fmt.Errorf("processor not found: %s", name)
