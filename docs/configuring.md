@@ -22,6 +22,8 @@ The `digest` section controls the output format and metadata:
 format = "epub"  # Can be "epub" or "markdown"
 output_path = "digest-{{.DTLong}}.epub"  # Supports Go templates for the generated time
 title = "My Daily Digest - {{.Date}}"  # Same as above
+dedup_by_url = true  # Remove duplicate articles with the same URL
+sort_by = ["PublishedAt:desc", "Title:asc"]  # Sort articles by field(s) with direction
 ```
 
 ### Available Date Templates
@@ -56,6 +58,7 @@ The `sources` section defines where dijester fetches content from:
 enabled = true  # Whether this source is active
 max_articles = 10  # Maximum articles to include from this source
 type = "TYPE"  # Source type (e.g., "hackernews", "rss")
+word_denylist = ["spam", "unwanted"]  # Filter out articles containing these words
 
 [sources.NAME.options]
 # Source-specific options
@@ -123,6 +126,53 @@ The `formatting` section controls how the output is formatted:
 [formatting]
 include_metadata = true  # Whether to include source metadata
 ```
+
+## Article Filtering and Sorting
+
+Dijester provides several ways to filter and sort articles:
+
+### URL Deduplication
+
+When multiple sources provide the same content (or a source has duplicate entries), you can enable URL-based deduplication:
+
+```toml
+[digest]
+dedup_by_url = true  # Remove duplicate articles with the same URL
+```
+
+This will keep only the first occurrence of each unique URL in the final digest.
+
+### Word Denylist Filtering
+
+Each source can have a list of words that will cause articles to be filtered
+out if they appear in the title, content, or summary:
+
+```toml
+[sources.example]
+word_denylist = ["crypto", "nft", "bitcoin"]
+```
+
+The filtering is case-insensitive. Any article containing any of these words will be excluded from the digest.
+
+### Article Sorting
+
+You can sort articles based on their properties:
+
+```toml
+[digest]
+sort_by = ["SourceName", "PublishedAt:desc", "Title"]
+```
+
+Each sort field consists of a property name and an optional direction (`asc` or `desc`). If no direction is specified, ascending order is used by default.
+
+Available properties for sorting:
+- `Title`: Article title
+- `Author`: Article author
+- `PublishedAt`: Publication date
+- `URL`: Article URL
+- `SourceName`: Name of the source
+
+Multiple sort fields are applied in order, with later fields used as tie-breakers.
 
 ## Override Configurations
 

@@ -4,6 +4,8 @@
 format = "markdown"
 output_path = "./digest-{{.Year}}-{{.MonthNum}}-{{.Day}}.md"
 title = "My Daily News Digest - {{.Date}}"
+dedup_by_url = true
+sort_by = ["PublishedAt:desc", "Title:asc"]
 
 [global]
 concurrent_fetches = 3
@@ -14,6 +16,7 @@ user_agent = "Dijester/1.0"
 enabled = true
 max_articles = 5
 type = "hackernews"
+word_denylist = ["crypto", "NFT", "blockchain"]
 
 [sources.hackernews.options]
 categories = ["front_page"]

@@ -23,6 +23,12 @@ type Config struct {
 
 		// OutputPath is where the digest will be saved
 		OutputPath string `toml:"output_path"`
+
+		// DedupByURL determines whether to deduplicate articles by URL
+		DedupByURL bool `toml:"dedup_by_url"`
+
+		// SortBy contains a list of article properties to sort by
+		SortBy []string `toml:"sort_by"`
 	} `toml:"digest"`
 
 	// Sources is a map of source configurations

@@ -39,7 +39,7 @@ func main() {
 	log.Println("Dijester starting up...")
 
 	if *configPath == "" {
-		log.Fatal("No config file specified. Use --config to specify a config file.")
+		log.Fatal("No config file specified. Use -config to specify a config file.")
 	}
 
 	cfg, err := config.LoadFile(*configPath)
@@ -120,6 +120,17 @@ func main() {
 		}
 		log.Printf("Fetched %d articles from %s", len(articles), src.Name())
 
+		if len(srcCfg.WordDenylist) > 0 {
+			originalCount := len(articles)
+			articles = source.FilterArticlesByWordDenylist(articles, srcCfg.WordDenylist)
+			log.Printf(
+				"Kept %d/%d articles from %s after word denylist filtering",
+				len(articles),
+				originalCount,
+				src.Name(),
+			)
+		}
+
 		for _, article := range articles {
 			for procI, proc := range srcProcs {
 				if err := proc.Process(article, &srcProcsOpts[procI]); err != nil {
@@ -130,6 +141,30 @@ func main() {
 		}
 
 		digest.Articles = append(digest.Articles, articles...)
+	}
+
+	if len(digest.Articles) == 0 {
+		log.Println("No articles found. Exiting.")
+		return
+	}
+
+	log.Printf("Fetched %d articles from all sources", len(digest.Articles))
+
+	if cfg.Digest.DedupByURL {
+		log.Println("Deduplicating articles by URL")
+		originalCount := len(digest.Articles)
+		digest.Articles = models.DeduplicateArticlesByURL(digest.Articles)
+		log.Printf(
+			"Kept %d/%d articles after URL deduplication",
+			len(digest.Articles),
+			originalCount,
+		)
+	}
+
+	if len(cfg.Digest.SortBy) > 0 {
+		log.Println("Sorting articles by configured properties")
+		models.SortArticles(digest.Articles, cfg.Digest.SortBy)
+		log.Println("Articles sorted successfully")
 	}
 
 	var finalOutputPath string

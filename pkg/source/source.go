@@ -3,6 +3,7 @@ package source
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/shrik450/dijester/pkg/fetcher"
 	"github.com/shrik450/dijester/pkg/models"
@@ -21,6 +22,9 @@ type SourceConfig struct {
 
 	// MaxArticles limits the number of articles to include from this source
 	MaxArticles int `toml:"max_articles"`
+
+	// WordDenylist contains words that will cause articles to be filtered out
+	WordDenylist []string `toml:"word_denylist"`
 
 	// FetcherConfig contains configuration for the fetcher
 	FetcherConfig *fetcher.FetcherConfig `toml:"fetcher_config"`
@@ -66,4 +70,31 @@ func New(name string) (Source, error) {
 	}
 
 	return nil, fmt.Errorf("source not found: %s", name)
+}
+
+// FilterArticlesByWordDenylist filters out articles that contain any of the denylisted words
+// in their title, content, or summary. The comparison is case-insensitive.
+// Returns a new slice containing only the articles that don't match any denylisted words.
+func FilterArticlesByWordDenylist(articles []*models.Article, denylist []string) []*models.Article {
+	if len(articles) == 0 || len(denylist) == 0 {
+		return articles
+	}
+
+	filtered := make([]*models.Article, 0, len(articles))
+	for _, article := range articles {
+		isFiltered := false
+		for _, denyWord := range denylist {
+			if strings.Contains(strings.ToLower(article.Title), strings.ToLower(denyWord)) ||
+				strings.Contains(strings.ToLower(article.Content), strings.ToLower(denyWord)) ||
+				strings.Contains(strings.ToLower(article.Summary), strings.ToLower(denyWord)) {
+				isFiltered = true
+				break
+			}
+		}
+		if !isFiltered {
+			filtered = append(filtered, article)
+		}
+	}
+
+	return filtered
 }
