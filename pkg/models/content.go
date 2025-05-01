@@ -1,8 +1,9 @@
 package models
 
 import (
-	"reflect"
-	"sort"
+	"cmp"
+	"fmt"
+	"slices"
 	"strings"
 	"time"
 )
@@ -52,6 +53,16 @@ type Digest struct {
 	Metadata map[string]interface{}
 }
 
+var allowedSortFields = []string{
+	"Title",
+	"Author",
+	"PublishedAt",
+	"URL",
+	"Content",
+	"Summary",
+	"SourceName",
+}
+
 // DeduplicateArticlesByURL removes duplicate articles with the same URL.
 // Returns a new slice containing only unique articles, keeping the first
 // occurrence of each URL.
@@ -85,7 +96,7 @@ type SortField struct {
 // ParseSortField parses a sort field string in the format "FieldName:direction".
 // If no direction is specified, defaults to "asc".
 // Returns a SortField struct.
-func ParseSortField(fieldStr string) SortField {
+func ParseSortField(fieldStr string) (SortField, error) {
 	field := SortField{
 		Direction: "asc",
 	}
@@ -93,73 +104,81 @@ func ParseSortField(fieldStr string) SortField {
 	if strings.Contains(fieldStr, ":") {
 		parts := strings.Split(fieldStr, ":")
 		field.Name = parts[0]
-		if len(parts) > 1 && (parts[1] == "asc" || parts[1] == "desc") {
+		if len(parts) > 2 {
+			return SortField{}, fmt.Errorf("invalid sort field format: %s", fieldStr)
+		}
+		if len(parts) == 2 {
 			field.Direction = parts[1]
 		}
 	} else {
 		field.Name = fieldStr
 	}
 
-	return field
+	if field.Name == "" || !slices.Contains(allowedSortFields, field.Name) {
+		return SortField{}, fmt.Errorf("invalid sort field: %s", field.Name)
+	}
+
+	if field.Direction != "asc" && field.Direction != "desc" {
+		return SortField{}, fmt.Errorf("invalid sort direction: %s", field.Direction)
+	}
+
+	return field, nil
 }
 
 // SortArticles sorts a slice of articles based on the provided sort fields.
 // Each sort field can be in the format "FieldName" or "FieldName:direction"
 // where direction is either "asc" or "desc".
-func SortArticles(articles []*Article, sortFields []string) {
+func SortArticles(articles []*Article, sortFields []string) error {
 	if len(articles) <= 1 || len(sortFields) == 0 {
-		return
+		return nil
 	}
 
-	parsedFields := make([]SortField, 0, len(sortFields))
-	for _, field := range sortFields {
-		parsedFields = append(parsedFields, ParseSortField(field))
+	parsedFields := make([]SortField, len(sortFields))
+	for i, fieldStr := range sortFields {
+		field, err := ParseSortField(fieldStr)
+		if err != nil {
+			return fmt.Errorf("error parsing sort field %s: %w", fieldStr, err)
+		}
+		parsedFields[i] = field
 	}
 
-	compareArticles := func(i, j int) bool {
+	compareArticles := func(a, b *Article) int {
 		for _, field := range parsedFields {
-			iVal := reflect.ValueOf(*articles[i]).FieldByName(field.Name)
-			jVal := reflect.ValueOf(*articles[j]).FieldByName(field.Name)
+			cmpVal := cmpByField(a, b, field.Name)
 
-			if !iVal.IsValid() || !jVal.IsValid() {
-				continue
-			}
-
-			var isLess bool
-
-			switch iVal.Kind() {
-			case reflect.String:
-				isLess = iVal.String() < jVal.String()
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-				isLess = iVal.Int() < jVal.Int()
-			case reflect.Float32, reflect.Float64:
-				isLess = iVal.Float() < jVal.Float()
-			case reflect.Struct:
-				// Special handling for time.Time
-				if iVal.Type() == reflect.TypeOf(time.Time{}) {
-					iTime := iVal.Interface().(time.Time)
-					jTime := jVal.Interface().(time.Time)
-					isLess = iTime.Before(jTime)
-				} else {
-					continue
-				}
-			default:
-				continue
-			}
-
-			// If we have different values, return based on sort direction
-			if iVal.Interface() != jVal.Interface() {
+			if cmpVal != 0 {
 				if field.Direction == "desc" {
-					return !isLess
+					return -cmpVal
 				}
-				return isLess
+				return cmpVal
 			}
-			// If values are equal, continue to next sort field
 		}
 
-		// If all fields compared are equal
-		return false
+		return 0
 	}
 
-	sort.Slice(articles, compareArticles)
+	slices.SortStableFunc(articles, compareArticles)
+
+	return nil
+}
+
+func cmpByField(a, b *Article, fieldName string) int {
+	switch fieldName {
+	case "Title":
+		return cmp.Compare(a.Title, b.Title)
+	case "Author":
+		return cmp.Compare(a.Author, b.Author)
+	case "PublishedAt":
+		return cmp.Compare(a.PublishedAt.Unix(), b.PublishedAt.Unix())
+	case "URL":
+		return cmp.Compare(a.URL, b.URL)
+	case "Content":
+		return cmp.Compare(a.Content, b.Content)
+	case "Summary":
+		return cmp.Compare(a.Summary, b.Summary)
+	case "SourceName":
+		return cmp.Compare(a.SourceName, b.SourceName)
+	default:
+		return 0
+	}
 }

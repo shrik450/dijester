@@ -58,6 +58,12 @@ if ! grep -q "Fetching from source:  hackernews" "$TEST_DIR/epub_test_output.txt
     exit 1
 fi
 
+if grep -q "Error fetching from rss:" "$TEST_DIR/epub_test_output.txt"; then
+    echo -e "${RED}✗ EPUB test failed with errors!${NC}"
+    cat "$TEST_DIR/epub_test_output.txt"
+    exit 1
+fi
+
 # Check if the EPUB output file exists
 # Look for any .epub file in the output directory since the filename uses a date template
 EPUB_FILE=$(find $TEST_DIR -name "*.epub" | head -n 1)

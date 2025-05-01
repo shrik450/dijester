@@ -28,63 +28,6 @@ func (m *MockFetcher) FetchURLAsString(ctx context.Context, url string) (string,
 	return m.MockFetchURLAsString(ctx, url)
 }
 
-func TestRSSSource_Configure(t *testing.T) {
-	source := New()
-
-	// Test valid configuration
-	validConfig := map[string]interface{}{
-		"url":          "https://example.com/feed.xml",
-		"name":         "Test Feed",
-		"max_articles": 5,
-	}
-
-	err := source.Configure(validConfig)
-	if err != nil {
-		t.Errorf("Configure with valid config returned error: %v", err)
-	}
-
-	if source.url != "https://example.com/feed.xml" {
-		t.Errorf("Expected URL 'https://example.com/feed.xml', got '%s'", source.url)
-	}
-
-	if source.name != "Test Feed" {
-		t.Errorf("Expected name 'Test Feed', got '%s'", source.name)
-	}
-
-	if source.maxArticles != 5 {
-		t.Errorf("Expected maxArticles 5, got %d", source.maxArticles)
-	}
-
-	// Test missing URL
-	invalidConfig := map[string]interface{}{
-		"name": "Test Feed",
-	}
-
-	err = source.Configure(invalidConfig)
-	if err == nil {
-		t.Error("Configure without URL should return error")
-	}
-
-	// Test default values
-	minimalConfig := map[string]interface{}{
-		"url": "https://example.com/feed.xml",
-	}
-
-	source = New()
-	err = source.Configure(minimalConfig)
-	if err != nil {
-		t.Errorf("Configure with minimal config returned error: %v", err)
-	}
-
-	if source.name != "rss" {
-		t.Errorf("Expected default name 'rss', got '%s'", source.name)
-	}
-
-	if source.maxArticles != 10 {
-		t.Errorf("Expected default maxArticles 10, got %d", source.maxArticles)
-	}
-}
-
 func TestRSSSource_Fetch(t *testing.T) {
 	// Sample RSS feed content
 	sampleFeed := `

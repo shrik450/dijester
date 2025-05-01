@@ -162,9 +162,12 @@ func main() {
 	}
 
 	if len(cfg.Digest.SortBy) > 0 {
-		log.Println("Sorting articles by configured properties")
-		models.SortArticles(digest.Articles, cfg.Digest.SortBy)
-		log.Println("Articles sorted successfully")
+		log.Println("Sorting articles by configured properties: ", cfg.Digest.SortBy)
+
+		err := models.SortArticles(digest.Articles, cfg.Digest.SortBy)
+		if err != nil {
+			log.Fatalf("Error sorting articles: %v", err)
+		}
 	}
 
 	var finalOutputPath string

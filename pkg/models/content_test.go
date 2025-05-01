@@ -98,40 +98,59 @@ func TestDeduplicateArticlesByURL(t *testing.T) {
 
 func TestParseSortField(t *testing.T) {
 	tests := []struct {
-		name     string
-		fieldStr string
-		want     SortField
+		name      string
+		fieldStr  string
+		want      SortField
+		mustError bool
 	}{
 		{
-			name:     "field only",
-			fieldStr: "Title",
-			want:     SortField{Name: "Title", Direction: "asc"},
+			name:      "field only",
+			fieldStr:  "Title",
+			want:      SortField{Name: "Title", Direction: "asc"},
+			mustError: false,
 		},
 		{
-			name:     "field with asc direction",
-			fieldStr: "Title:asc",
-			want:     SortField{Name: "Title", Direction: "asc"},
+			name:      "field with asc direction",
+			fieldStr:  "Title:asc",
+			want:      SortField{Name: "Title", Direction: "asc"},
+			mustError: false,
 		},
 		{
-			name:     "field with desc direction",
-			fieldStr: "PublishedAt:desc",
-			want:     SortField{Name: "PublishedAt", Direction: "desc"},
+			name:      "field with desc direction",
+			fieldStr:  "PublishedAt:desc",
+			want:      SortField{Name: "PublishedAt", Direction: "desc"},
+			mustError: false,
 		},
 		{
-			name:     "field with invalid direction defaults to asc",
-			fieldStr: "Content:invalid",
-			want:     SortField{Name: "Content", Direction: "asc"},
+			name:      "field with invalid direction errors",
+			fieldStr:  "Content:invalid",
+			want:      SortField{},
+			mustError: true,
 		},
 		{
-			name:     "multiple colons take first part as field name",
-			fieldStr: "URL:desc:extra",
-			want:     SortField{Name: "URL", Direction: "desc"},
+			name:      "field with invalid name errors",
+			fieldStr:  "InvalidField:asc",
+			want:      SortField{},
+			mustError: true,
+		},
+		{
+			name:      "multiple colons errors",
+			fieldStr:  "URL:desc:extra",
+			want:      SortField{},
+			mustError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ParseSortField(tt.fieldStr)
+			got, err := ParseSortField(tt.fieldStr)
+			if tt.mustError {
+				if err == nil {
+					t.Errorf("ParseSortField() expected error, got nil")
+				}
+				return
+			}
+
 			if got.Name != tt.want.Name || got.Direction != tt.want.Direction {
 				t.Errorf("ParseSortField() = %v, want %v", got, tt.want)
 			}
@@ -149,6 +168,7 @@ func TestSortArticles(t *testing.T) {
 		articles   []*Article
 		sortFields []string
 		want       []*Article
+		mustError  bool
 	}{
 		{
 			name:       "empty slice",
@@ -227,7 +247,7 @@ func TestSortArticles(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid field is ignored",
+			name: "invalid field errors",
 			articles: []*Article{
 				{Title: "C Article", URL: "https://example.com/3"},
 				{Title: "A Article", URL: "https://example.com/1"},
@@ -239,6 +259,7 @@ func TestSortArticles(t *testing.T) {
 				{Title: "B Article", URL: "https://example.com/2"},
 				{Title: "C Article", URL: "https://example.com/3"},
 			},
+			mustError: true,
 		},
 	}
 
@@ -251,7 +272,14 @@ func TestSortArticles(t *testing.T) {
 				articlesCopy[i] = &articleCopy
 			}
 
-			SortArticles(articlesCopy, tt.sortFields)
+			err := SortArticles(articlesCopy, tt.sortFields)
+
+			if tt.mustError {
+				if err == nil {
+					t.Errorf("SortArticles() expected error, got nil")
+				}
+				return
+			}
 
 			if len(articlesCopy) != len(tt.want) {
 				t.Errorf(

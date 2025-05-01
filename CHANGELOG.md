@@ -1,5 +1,15 @@
 # Dijester Changelog
 
+## v0.3.0 (2025-05-01)
+
+- Add `-version` flag to CLI to display the current version of Dijester.
+- Add configuration option to deduplicate articles by URL.
+- Add configuration option to sort articles.
+- Add per-source configuration options for `word_denylist`. Words in the
+  denylist will cause the article to be excluded from the output.
+- Add configuration option for the RSS source to fetch the full article from the
+  item's link.
+
 ## v0.2.1 (2025-04-30)
 
 Fast follow release to fix the 1MB content limit affecting non-HTML content

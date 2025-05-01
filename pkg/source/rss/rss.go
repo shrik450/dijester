@@ -13,18 +13,20 @@ import (
 
 // Source implements an RSS/Atom feed source.
 type Source struct {
-	name        string
-	url         string
-	maxArticles int
-	parser      *gofeed.Parser
+	name              string
+	url               string
+	maxArticles       int
+	fetchFullArticles bool
+	parser            *gofeed.Parser
 }
 
 // New creates a new RSS source with default settings.
 func New() *Source {
 	return &Source{
-		name:        "rss",
-		maxArticles: 10,
-		parser:      gofeed.NewParser(),
+		name:              "rss",
+		maxArticles:       15,
+		fetchFullArticles: false,
+		parser:            gofeed.NewParser(),
 	}
 }
 
@@ -48,6 +50,10 @@ func (s *Source) Configure(config map[string]interface{}) error {
 
 	if max, ok := config["max_articles"].(int); ok && max > 0 {
 		s.maxArticles = max
+	}
+
+	if fetchFull, ok := config["fetch_full_articles"].(bool); ok {
+		s.fetchFullArticles = fetchFull
 	}
 
 	return nil
@@ -104,6 +110,18 @@ func (s *Source) Fetch(ctx context.Context, fetcher fetcher.Fetcher) ([]*models.
 			SourceName:  s.name,
 			Tags:        item.Categories,
 			Metadata:    make(map[string]any),
+		}
+
+		if s.fetchFullArticles && article.URL != "" {
+			fullContent, err := fetcher.FetchURLAsString(ctx, article.URL)
+			if err != nil {
+				fmt.Printf(
+					"Error fetching full article; falling back to original content %v\n",
+					err,
+				)
+			} else {
+				article.Content = fullContent
+			}
 		}
 
 		articles = append(articles, article)

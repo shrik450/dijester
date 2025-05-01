@@ -1,7 +1,6 @@
 # Configuring Dijester
 
-Dijester uses TOML configuration files to control its behavior. This document
-explains all configuration options.
+Dijester uses TOML configuration files to control its behavior. This document explains all configuration options.
 
 ## Configuration File Structure
 
@@ -173,6 +172,8 @@ Available properties for sorting:
 - `SourceName`: Name of the source
 
 Multiple sort fields are applied in order, with later fields used as tie-breakers.
+
+If no sorts are specified, there is no guarantee on the order of articles in the output.
 
 ## Override Configurations
 
